@@ -5168,3 +5168,5 @@ metalReinforcedWoodDrawBridgePowered,"Разводной мост с эл.при
 vaultHatch_v3_Powered,"Люк хранилища v3 с эл.приводом"
 xuiQuickWaypoint,"Быстрая точка"
 xuiSaveWaypoint,"Сохранить точку"
+electricwirerelay,"Опора для кабеля"
+electrictimerrelay,"Опора для кабеля с таймером"
