@@ -5261,5 +5261,11 @@ ulmGunKineticR90Desc,"Маленький и очень компактный пи
 ulmResourcePartsSMG,"Части ПП"
 ulmResourcePartsSMGDesc,"Фрагменты того, что когда-то было ПП."
 ulmBlockResourceSpikeVariantHelper,"Деревянные колья"
-ulmBlockResourceSpikeVariantHelperDesc,"Шиповидные ловушки - это ваша первая и самая ранняя линия обороны. Они замедляют и наносят урон врагам."
-
+ulmBlockResourceSpikeVariantHelperDesc,"Шипы ловушки - это ваша первая и самая ранняя линия обороны. Они замедляют и наносят урон врагам."
+vehicleMotorcycleChassisSchematic, "Схема: «Каркас мотоцикла»"
+cntServiceTruckMoPower,"Грузовик «Мо Повер Электрик»"
+cntServiceTruckWorkingStiffTools,"Грузовик «Пролетарий»"
+zombieJanitor,"Зомби-уборщик"
+buffFatiguedDesc,"Вы устали и получаете на 10% больше урона от всех атак.\N Съешьте витамины, чтобы восстановится. \N\n Ваш максимальный запас здоровья уменьшен на {cvar(.WeakenedHealthBlockage:0.0)}."
+buffFatiguedName,"Усталость"
+buffFatiguedTooltip,"Вы чувствуете слабость."
