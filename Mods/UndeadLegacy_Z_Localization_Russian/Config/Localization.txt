@@ -5261,7 +5261,7 @@ ulmGunKineticR90Desc,"Маленький и очень компактный пи
 ulmResourcePartsSMG,"Части ПП"
 ulmResourcePartsSMGDesc,"Фрагменты того, что когда-то было ПП."
 ulmBlockResourceSpikeVariantHelper,"Деревянные колья"
-ulmBlockResourceSpikeVariantHelperDesc,"Шипы ловушки - это ваша первая и самая ранняя линия обороны. Они замедляют и наносят урон врагам."
+ulmBlockResourceSpikeVariantHelperDesc,"Деревянные колья - это ваша первая и самая ранняя линия обороны. Они замедляют и наносят урон врагам."
 vehicleMotorcycleChassisSchematic, "Схема: «Каркас мотоцикла»"
 cntServiceTruckMoPower,"Грузовик «Мо Повер Электрик»"
 cntServiceTruckWorkingStiffTools,"Грузовик «Пролетарий»"
