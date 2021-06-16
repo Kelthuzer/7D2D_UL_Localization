@@ -5347,5 +5347,10 @@ ulmLightTrackPlayer,"Точечный светильник"
 statDamageFalloffRange,"Дальнобойность"
 ulmGunKineticShotgunPumpScrapBlueprint,"[B2DFFF]Схема дробовика из хлама[-]"
 ulmGunKineticShotgunPumpScrapBlueprintDesc,"Схема изготовления [decea3]дробовика из хлама[-]."
+<<<<<<< Updated upstream
 uiIngredientInclModded,"Включая модифицированные"
 animalMountainLion,"Пума"
+=======
+animalMountainLion,"Пума"
+
+>>>>>>> Stashed changes
