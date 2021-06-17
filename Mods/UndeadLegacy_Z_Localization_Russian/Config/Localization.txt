@@ -5349,3 +5349,7 @@ ulmGunKineticShotgunPumpScrapBlueprint,"[B2DFFF]Схема дробовика и
 ulmGunKineticShotgunPumpScrapBlueprintDesc,"Схема изготовления [decea3]дробовика из хлама[-]."
 uiIngredientInclModded,"Включая модифицированные"
 animalMountainLion,"Пума"
+animalSnake,"Змея"
+animalCoyote,"Койот"
+animalZombieBear,"Зомби-медведь"
+
