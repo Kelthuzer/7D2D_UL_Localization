@@ -5358,3 +5358,5 @@ ulmGunKineticPistolScrap1Desc,"Собран их подножного мусор
 ulmGunKineticPistolScrap2,"Пистолет из лома"
 ulmGunKineticPistolScrap2Desc,"Он прочнее, чем кажется, даже несмотря на то, что сделан из кучи металлических обрезков."
 xuiDefault,"Отключено"
+animalWolf,"Волк"
+zombieBikerFeral,"Дикий Байкер"
