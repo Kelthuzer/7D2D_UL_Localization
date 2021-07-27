@@ -5404,3 +5404,4 @@ lblStashFillAndSmart,"Первый клик: Перемещение предме
 quest_buried_supplies_response, "Зарытые припасы ([DECEA3]{treasure.distance} {treasure.direction}[-])"
 quest_tier1_buried_supplies, "Ур. 1 Зарытые припасы"
 quest_tier2_buried_supplies, "Ур. 2 Зарытые припасы"
+ObjectiveRallyPointHeadTo, "Идти к точке сбора"
