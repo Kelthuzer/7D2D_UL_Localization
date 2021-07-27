@@ -5385,7 +5385,7 @@ ulmResourceMotorcycleRepairKitBlueprint,"[B2DFFF]Схема ремонтного
 ulmResourceMotorcycleRepairKitBlueprintDesc,"Инструкция как сделать [decea3]Ремонтный набор для мотоцикла[-]."
 ulmResourceTruckRepairKitBlueprint,"[B2DFFF]Схема ремонтного набора для грузовика[-]"
 ulmResourceTruckRepairKitBlueprintDesc,"Инструкция как сделать [decea3]Ремонтный набор для грузовкиа[-]."
-quest_clear_response,"Зачистка ([DECEA3]{treasure.distance} {treasure.direction}[-])"
+quest_clear_response,"Зачистка ([DECEA3]{poi.distance} {poi.direction}[-])"
 foodTunaFishGravyToast,"Сэндвич с тунцом"
 TwitchAction_ActionDeadWeight,"Мертвый груз"
 TwitchAction_ActionDeadWeightDesc,"Создает в инвентаре [decea3]24[-] тяжелых [decea3]Гнилых кусоков мяса[-], которые не складываются."
