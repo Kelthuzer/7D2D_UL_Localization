@@ -1,0 +1,1 @@
+curl "https://raw.githubusercontent.com/Kelthuzer/7D2D_UL_Localization/main/Mods/UndeadLegacy_Localization_Russian/Config/Localization.txt" --output ".\Config\Localization.txt"
