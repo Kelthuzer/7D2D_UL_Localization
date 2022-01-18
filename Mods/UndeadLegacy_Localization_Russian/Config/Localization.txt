@@ -3142,7 +3142,7 @@ ulmGunKineticPistolColtDesc,"Надежное полуавтоматическо
 ulmGunKineticPistolDesertEagle,"Пустынный богомол"
 ulmGunKineticPistolDesertEagleDesc,"Если вам нужен самозарядный полуавтоматический пистолет с самым крупным калибром, то этот пистолет для вас."
 ulmGunKineticPistolGlock,"Голконд"
-ulmGunKineticPistolGlockDesc,"Надежный полуавтоматический пистолет с полимерной рамкой и обоймой повышенной емкости."
+ulmGunKineticPistolGlockDesc,"Надежный полуавтоматический пистолет с полимерной рамкой и магазином повышенной емкости."
 ulmGunKineticPistolMakarov,"Бродяга"
 ulmGunKineticPistolMakarovDesc,"Компактный и легкий малокалиберный пистолет. Хорошее начальное оружие для самообороны."
 ulmGunKineticPistolScrap1,"Пистолет из хлама"
