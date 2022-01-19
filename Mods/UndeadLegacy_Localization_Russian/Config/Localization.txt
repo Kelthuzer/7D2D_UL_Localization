@@ -1209,11 +1209,7 @@ modMeleeWeightedHeadSchematic,"Утяжелитель"
 modMeleeWoodSplitterSchematic,"Дровокол"
 modRoboticDroneArmorPlatingModSchematic,"Броня для дрона"
 modRoboticDroneCargoModSchematic,"Сумка для дрона"
-<<<<<<< HEAD
 modRoboticDroneHeadlampModSchematic,"Дрон-светильник"
-=======
-modRoboticDroneHeadlampModSchematic,""Светильник-дрон"
->>>>>>> fcdcd6fc974bda5279965cd5293d50f44d2335f3
 modRoboticDroneMedicModSchematic,"Дрон-медик"
 modRoboticDroneMoraleBoosterModSchematic,"Повышение боевого духа"
 modShotgunSawedOffBarrelSchematic,"Обрез дробовика"
