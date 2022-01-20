@@ -4622,7 +4622,7 @@ ulmToolPliersDesc,"Плоскогубцы - это ручной инструме
 ulmToolPortableDrill,"Портативная дрель"
 ulmToolPortableDrillDesc,"Выглядит рабочей и, к моему удивлению, на нем очень мало пыли."
 ulmToolSaw,"Пила"
-ulmToolSawDesc,"Она едва может пилить дерево, но все же может быть полезен."
+ulmToolSawDesc,"Она едва может пилить дерево, но все же может быть полезна."
 ulmToolScissors,"Ножницы"
 ulmToolScissorsDesc,"Выглядит скучно, но все же они могут быть полезны для чего-то."
 ulmToolScrewdriver,"Отвертка"
