@@ -2270,13 +2270,8 @@ uiUpgradeChance,"Шанс улучшения"
 uiUpgradeCost,"Цена улучшения"
 uiUpgradeFail,"[FF1919]Неудачное улучшение[-]"
 uiUpgradeMax,"Дальнейшее улучшение невозможно"
-<<<<<<< Updated upstream
 uiUpgradeRemoveMods,"[decea3]Невозможно улучшить с установленными модами[-]"
-uiUpgradeRequiresRepairs,"[decea3]Сперва надо починить[-]]"
-=======
-uiUpgradeRemoveMods,"[decea3]Невозможно выполнить улучшение с установленными модами[-]"
 uiUpgradeRequiresRepairs,"[decea3]Сперва надо починить[-]"
->>>>>>> Stashed changes
 uiUpgradeSuccess,"[73E9B2]Успешное улучшение[-]"
 uiValue,"Ценность"
 uiVehicleCargo,"Грузоподъемность"
