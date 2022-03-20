@@ -5292,7 +5292,7 @@ uiActionSkillLevelUp,"Ваш навык [decea3]{0}[-] по высился до 
 quest_clear_response,"Зачистить [DECEA3]{poi.name}[-] ([DECEA3]{poi.distance} {poi.direction}[-])"
 quest_fetch_response,"Найти [DECEA3]{poi.name}[-] ([DECEA3]{poi.distance} {poi.direction}[-])"
 quest_fetch_clear_response,"Найти и зачистить [DECEA3]{poi.name}[-] ([DECEA3]{poi.distance} {poi.direction}[-])"
-quest_restore_power_response,"Восстановить питание [DECEA3]{poi.name}[-]/n[FF1919]Ночью[-] ([DECEA3]{poi.distance} {poi.direction}[-])"
+quest_restore_power_response,"Восс. питание [FF1919]Ночью[-]\n[DECEA3]{poi.name}[-] ([DECEA3]{poi.distance} {poi.direction}[-])"
 blockcommand_useC4,"Использовать взрыв пакет"
 uiBlockMissing,"Не хватает блока"
 uiBlockName,"{0}"
