@@ -1614,7 +1614,6 @@ questRallyActivate,"[73E9B2][{{0}}][-] Начать задание\n[decea3]( {1
 questReward4x4PartsBundle,"Набор автомобильных запчастей"
 rangedWeaponStatsTip_title,"Статистика оружия дальнего боя"
 ranger_station_02,"Станция рейнджеров №02"
-rConcreteShapes:VariantHelper,"Формы из железобетона"
 reqSkillPoints1,"1 ОУ"
 reqSkillPoints2,"2 ОУ"
 reqSkillPoints3,"3 ОУ"
