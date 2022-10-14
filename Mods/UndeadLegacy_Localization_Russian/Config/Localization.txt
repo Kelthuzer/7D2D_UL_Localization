@@ -5201,6 +5201,7 @@ videoShadowsDistanceDesc,"Качество и расстояние до тене
 videoShowBuffTimers,"Показать таймеры баффов"
 videoShowBuffTimersDesc,"Показывает оставшееся время активного баффа в качестве дополнительного текста для активных баффов, отображаемых на HUD.\n[decea3][По умолчанию: Нет][-]"
 videoShowCarryWeight,"Показать груз"
+videoShowCarryWeightDesc,"Показывает переносимый вес над статистикой игрока.\n[decea3] [По умолчанию: Выкл.] [-]"
 videoShowCompass,"Компас"
 videoShowCompassDesc,"Показывает компас.\n[decea3][По умолчанию: Да][-]"
 videoShowDayAndTime,"День и время"
