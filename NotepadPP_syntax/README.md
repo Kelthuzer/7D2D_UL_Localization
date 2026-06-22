@@ -1,4 +1,4 @@
-Syntax for NOTEPAD++
+Syntax for NOTEPAD++  
 LIGHT 
 <img width="704" height="526" alt="image" src="https://github.com/user-attachments/assets/dcf4e34a-b0bb-4ff9-9f64-34f21a4bff0d" />  
 DARK
