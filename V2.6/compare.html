@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Undead Legacy v2.6 — English ↔ Russian</title>
+<style>
+:root{color-scheme:light dark;--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--good:#3fb950;--warn:#d29922;--bad:#f85149;--accent:#58a6ff}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:2;background:rgba(13,17,23,.96);border-bottom:1px solid var(--border);padding:16px 20px;backdrop-filter:blur(8px)}
+h1{font-size:20px;margin:0 0 10px}a{color:var(--accent)}.toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 210px auto;gap:8px}.toolbar input,.toolbar select,.toolbar button{padding:9px 10px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--text)}
+.stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:var(--muted)}.stats b{color:var(--text)}main{padding:14px 20px 40px}.note{padding:10px 12px;border:1px solid var(--border);background:var(--panel);border-radius:6px;margin-bottom:12px;color:var(--muted)}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px}table{border-collapse:collapse;width:100%;min-width:1050px}th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;text-align:left}th{position:sticky;top:111px;background:var(--panel);z-index:1}td.key{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap}.text{white-space:pre-wrap;word-break:break-word;max-width:600px}.status{white-space:nowrap;font-weight:600}.ok{color:var(--good)}.same,.override{color:var(--warn)}.missing{color:var(--bad)}.ruonly{color:var(--accent)}tr:hover{background:rgba(110,118,129,.08)}.small{font-size:12px;color:var(--muted)}
+@media(max-width:800px){header{position:static}.toolbar{grid-template-columns:1fr}.stats{gap:8px}main{padding:10px}th{top:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Undead Legacy v2.6 — сравнение English ↔ Russian</h1>
+  <div class="toolbar">
+    <input id="q" type="search" placeholder="Поиск по ключу, English или Russian…" autocomplete="off">
+    <select id="filter">
+      <option value="all">Все строки</option>
+      <option value="ok">Переведено</option>
+      <option value="same">English = Russian</option>
+      <option value="override">RU override</option>
+      <option value="ruonly">Только Russian</option>
+      <option value="missing">Нет Russian</option>
+    </select>
+    <button id="reload" type="button">Обновить</button>
+  </div>
+  <div class="stats" id="stats">Загрузка…</div>
+</header>
+<main>
+  <div class="note">
+    Данные читаются напрямую из <a id="enLink" target="_blank">English.txt</a> и <a id="ruLink" target="_blank">Russian.txt</a> ветки <code>main</code>. Повторные русские строки после базового набора показываются как <b>RU override</b>; это позволяет видеть сохранённый блок компактных vanilla/UI-переопределений. Для исходного файла используется «мягкий» разбор строки по первой запятой: текущий English содержит историческую строку <code>waterTipDesc</code> с неэкранированной кавычкой <code>E"</code>.
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Ключ</th><th>English</th><th>Russian</th><th>Статус</th></tr></thead>
+      <tbody id="body"></tbody>
+    </table>
+  </div>
+</main>
+<script>
+const BASE='https://raw.githubusercontent.com/Kelthuzer/7D2D_UL_Localization/main/V2.6/Mods/UndeadLegacy/Config/Localization/';
+const EN=BASE+'English.txt', RU=BASE+'Russian.txt';
+enLink.href=EN; ruLink.href=RU;
+let rows=[];
+function decodeValue(v){v=v.replace(/\r$/,'');if(v.length>=2&&v[0]=='"'&&v.at(-1)=='"')v=v.slice(1,-1).replace(/""/g,'"');return v}
+function parseLoose(text){const ls=text.replace(/^\uFEFF/,'').split(/\n/);const out=[];for(let i=1;i<ls.length;i++){const line=ls[i].replace(/\r$/,'');if(!line.trim())continue;const p=line.indexOf(',');if(p<0){out.push({line:i+1,key:line,value:''});continue}out.push({line:i+1,key:line.slice(0,p),value:decodeValue(line.slice(p+1))})}return out}
+function build(en,ru){
+  const eGroups=new Map(),rGroups=new Map();
+  en.forEach(x=>{if(!eGroups.has(x.key))eGroups.set(x.key,[]);eGroups.get(x.key).push(x)});
+  ru.forEach(x=>{if(!rGroups.has(x.key))rGroups.set(x.key,[]);rGroups.get(x.key).push(x)});
+  const used=new Map(); const out=[]; let n=0;
+  for(const e of en){n++;const idx=used.get(e.key)||0;used.set(e.key,idx+1);const r=(rGroups.get(e.key)||[])[idx];let status='ok';if(!r)status='missing';else if(e.value===r.value)status='same';out.push({n,key:e.key,en:e.value,ru:r?.value??'',status,dup:(eGroups.get(e.key)||[]).length>1});}
+  for(const [key,rs] of rGroups){const ec=(eGroups.get(key)||[]).length;for(let i=ec;i<rs.length;i++){n++;const status=ec?'override':'ruonly';const e=(eGroups.get(key)||[]).at(-1);out.push({n,key,en:e?.value??'—',ru:rs[i].value,status,dup:true});}}
+  return {out,eGroups,rGroups};
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function label(s){return {ok:'OK',same:'EN = RU',override:'RU override',ruonly:'RU only',missing:'MISSING RU'}[s]||s}
+function render(){const q=document.getElementById('q').value.toLowerCase().trim(),f=document.getElementById('filter').value;const shown=rows.filter(r=>(f==='all'||r.status===f)&&(!q||r.key.toLowerCase().includes(q)||r.en.toLowerCase().includes(q)||r.ru.toLowerCase().includes(q)));document.getElementById('body').innerHTML=shown.map(r=>`<tr><td>${r.n}</td><td class="key" title="${r.dup?'Повторяющийся ключ':''}">${esc(r.key)}${r.dup?' <span class="small">×</span>':''}</td><td class="text">${esc(r.en)}</td><td class="text">${esc(r.ru)}</td><td class="status ${r.status}">${label(r.status)}</td></tr>`).join('');document.title=`${shown.length} строк — UL v2.6 EN ↔ RU`;}
+async function load(){stats.textContent='Загрузка…';try{const [et,rt]=await Promise.all([fetch(EN,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('English '+r.status);return r.text()}),fetch(RU,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Russian '+r.status);return r.text()})]);const en=parseLoose(et),ru=parseLoose(rt),b=build(en,ru);rows=b.out;const missing=rows.filter(x=>x.status==='missing').length,over=rows.filter(x=>x.status==='override').length,only=rows.filter(x=>x.status==='ruonly').length,same=rows.filter(x=>x.status==='same').length;stats.innerHTML=`<span>English: <b>${en.length}</b></span><span>Russian: <b>${ru.length}</b></span><span>Уникальных EN: <b>${b.eGroups.size}</b></span><span>Уникальных RU: <b>${b.rGroups.size}</b></span><span>Нет RU: <b>${missing}</b></span><span>Overrides: <b>${over}</b></span><span>RU only: <b>${only}</b></span><span>EN = RU: <b>${same}</b></span>`;render()}catch(e){stats.innerHTML=`<span class="missing">Ошибка загрузки: ${esc(e.message)}</span>`}}
+q.addEventListener('input',render);filter.addEventListener('change',render);reload.addEventListener('click',load);load();
+</script>
+</body>
+</html>
