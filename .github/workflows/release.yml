@@ -1,0 +1,118 @@
+name: Build Russian localization release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag, e.g. v2.6.0-ru2"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version }}"
+          git check-ref-format "refs/tags/${VERSION}"
+          SAFE_VERSION="${VERSION//\//-}"
+          echo "TAG=${VERSION}" >> "$GITHUB_ENV"
+          echo "SAFE_VERSION=${SAFE_VERSION}" >> "$GITHUB_ENV"
+          echo "ZIP_NAME=UndeadLegacy_Russian_${SAFE_VERSION}.zip" >> "$GITHUB_ENV"
+
+      - name: Build release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+
+          source = Path("V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt")
+          archive = Path(os.environ["ZIP_NAME"])
+          archive_path = "Mods/UndeadLegacy/Config/Localization/Russian.txt"
+
+          if not source.is_file():
+              raise SystemExit(f"Source file not found: {source}")
+
+          with ZipFile(archive, "w", compression=ZIP_DEFLATED, compresslevel=9) as zf:
+              zf.write(source, archive_path)
+
+          with ZipFile(archive, "r") as zf:
+              names = zf.namelist()
+              if names != [archive_path]:
+                  raise SystemExit(f"Unexpected archive contents: {names}")
+              if zf.read(archive_path) != source.read_bytes():
+                  raise SystemExit("Russian.txt inside ZIP differs from repository source")
+
+          print(f"Built {archive} ({archive.stat().st_size} bytes)")
+          print(f"Archive path: {archive_path}")
+          PY
+
+      - name: Create tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            EXISTING_SHA="$(git rev-list -n 1 "${TAG}")"
+            if [ "${EXISTING_SHA}" != "${GITHUB_SHA}" ]; then
+              echo "Tag ${TAG} already exists on ${EXISTING_SHA}, current commit is ${GITHUB_SHA}. Use a new version tag."
+              exit 1
+            fi
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag "${TAG}" "${GITHUB_SHA}"
+            git push origin "refs/tags/${TAG}"
+          fi
+
+      - name: Prepare release notes
+        shell: bash
+        run: |
+          cat > release-notes.md <<'EOF'
+          Русская локализация Undead Legacy v2.6.
+
+          **Установка:** распакуйте архив непосредственно в корневую папку `7 Days To Die`.
+
+          После распаковки файл должен находиться по пути:
+          `7 Days To Die\Mods\UndeadLegacy\Config\Localization\Russian.txt`
+          EOF
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TITLE="Undead Legacy v2.6 — Russian Localization ${TAG}"
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${ZIP_NAME}" --clobber
+            gh release edit "${TAG}" --title "${TITLE}" --notes-file release-notes.md --latest
+          else
+            gh release create "${TAG}" "${ZIP_NAME}" --title "${TITLE}" --notes-file release-notes.md --latest
+          fi
+
+      - name: Show result
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          echo "Release: $(gh release view "${TAG}" --json url -q .url)"
+          echo "Asset: ${ZIP_NAME}"
+          echo "ZIP contains only: Mods/UndeadLegacy/Config/Localization/Russian.txt"
