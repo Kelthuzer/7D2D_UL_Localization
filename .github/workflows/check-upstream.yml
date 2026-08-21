@@ -1,0 +1,132 @@
+name: Check Subquake upstream localization
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download upstream English.txt
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .upstream
+          curl \
+            --fail \
+            --location \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-delay 3 \
+            --connect-timeout 20 \
+            --max-time 120 \
+            --user-agent "Mozilla/5.0 GitHubActions/7D2D_UL_Localization" \
+            "https://gitlab.com/subquakesgroup/UndeadLegacyExperimentalPart1/-/raw/main/Mods/UndeadLegacy/Config/Localization/English.txt" \
+            --output .upstream/upstream-English.raw
+
+      - name: Normalize and validate files
+        shell: python
+        run: |
+          from pathlib import Path
+
+          upstream_raw = Path('.upstream/upstream-English.raw').read_bytes()
+          current_raw = Path('V2.6/Mods/UndeadLegacy/Config/Localization/English.txt').read_bytes()
+
+          def normalize(data: bytes) -> str:
+              text = data.decode('utf-8-sig')
+              return text.replace('\r\n', '\n').replace('\r', '\n')
+
+          upstream = normalize(upstream_raw)
+          current = normalize(current_raw)
+
+          if not upstream.startswith('Key,English\n'):
+              raise SystemExit('Downloaded file is not a valid Undead Legacy English localization: missing Key,English header')
+
+          upstream_lines = upstream.splitlines()
+          if len(upstream_lines) < 5000:
+              raise SystemExit(f'Downloaded file looks incomplete: only {len(upstream_lines)} lines')
+
+          Path('.upstream/upstream-English.txt').write_text(upstream, encoding='utf-8', newline='\n')
+          Path('.upstream/current-English.txt').write_text(current, encoding='utf-8', newline='\n')
+
+      - name: Compare with repository version
+        id: compare
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CURRENT=.upstream/current-English.txt
+          UPSTREAM=.upstream/upstream-English.txt
+          DIFF=.upstream/upstream.diff
+
+          if cmp -s "$CURRENT" "$UPSTREAM"; then
+            CHANGED=false
+            : > "$DIFF"
+          else
+            CHANGED=true
+            diff -u \
+              --label "repository/V2.6/English.txt" \
+              --label "Subquake/main/English.txt" \
+              "$CURRENT" "$UPSTREAM" > "$DIFF" || true
+          fi
+
+          CURRENT_SHA=$(sha256sum "$CURRENT" | cut -d' ' -f1)
+          UPSTREAM_SHA=$(sha256sum "$UPSTREAM" | cut -d' ' -f1)
+          CURRENT_LINES=$(wc -l < "$CURRENT" | tr -d ' ')
+          UPSTREAM_LINES=$(wc -l < "$UPSTREAM" | tr -d ' ')
+
+          {
+            echo "changed=$CHANGED"
+            echo "current_sha256=$CURRENT_SHA"
+            echo "upstream_sha256=$UPSTREAM_SHA"
+            echo "current_lines=$CURRENT_LINES"
+            echo "upstream_lines=$UPSTREAM_LINES"
+            echo "checked_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          } | tee .upstream/status.txt
+
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$UPSTREAM_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Write job summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          source .upstream/status.txt
+          {
+            echo "## Subquake upstream localization"
+            echo
+            if [ "$changed" = "true" ]; then
+              echo "**Update detected.**"
+            else
+              echo "**No localization update detected.**"
+            fi
+            echo
+            echo "| Check | Repository | Upstream |"
+            echo "|---|---:|---:|"
+            echo "| Lines | $current_lines | $upstream_lines |"
+            echo "| SHA-256 | \`${current_sha256}\` | \`${upstream_sha256}\` |"
+            echo
+            echo "Checked: \`${checked_at}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload comparison artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: subquake-upstream-${{ github.run_number }}
+          path: |
+            .upstream/upstream-English.txt
+            .upstream/upstream.diff
+            .upstream/status.txt
+          if-no-files-found: error
+          retention-days: 30
