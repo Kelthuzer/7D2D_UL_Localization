@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Undead Legacy v2.6 — English ↔ Russian</title>
 <style>
-:root{color-scheme:light dark;--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--good:#3fb950;--warn:#d29922;--bad:#f85149;--accent:#58a6ff}
+:root{color-scheme:light dark;--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--good:#3fb950;--warn:#d29922;--bad:#f85149;--accent:#58a6ff;--header-h:0px}
 *{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
-header{position:sticky;top:0;z-index:2;background:rgba(13,17,23,.96);border-bottom:1px solid var(--border);padding:16px 20px;backdrop-filter:blur(8px)}
+header{position:sticky;top:0;z-index:20;background:rgba(13,17,23,.96);border-bottom:1px solid var(--border);padding:16px 20px;backdrop-filter:blur(8px)}
 h1{font-size:20px;margin:0 0 10px}a{color:var(--accent)}.toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 210px auto;gap:8px}.toolbar input,.toolbar select,.toolbar button{padding:9px 10px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--text)}
 .stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:var(--muted)}.stats b{color:var(--text)}main{padding:14px 20px 40px}.note{padding:10px 12px;border:1px solid var(--border);background:var(--panel);border-radius:6px;margin-bottom:12px;color:var(--muted)}
-.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px}table{border-collapse:collapse;width:100%;min-width:1050px}th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;text-align:left}th{position:sticky;top:111px;background:var(--panel);z-index:1}td.key{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap}.text{white-space:pre-wrap;word-break:break-word;max-width:600px}.status{white-space:nowrap;font-weight:600}.ok{color:var(--good)}.same,.override{color:var(--warn)}.missing{color:var(--bad)}.ruonly{color:var(--accent)}tr:hover{background:rgba(110,118,129,.08)}.small{font-size:12px;color:var(--muted)}
-@media(max-width:800px){header{position:static}.toolbar{grid-template-columns:1fr}.stats{gap:8px}main{padding:10px}th{top:0}}
+.table-wrap{border:1px solid var(--border);border-radius:6px;overflow:visible}table{border-collapse:separate;border-spacing:0;width:100%;min-width:1050px;table-layout:fixed}.col-num{width:62px}.col-key{width:270px}.col-status{width:130px}th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;text-align:left}thead th{position:sticky;top:var(--header-h);background:var(--panel);z-index:10;box-shadow:0 1px 0 var(--border)}tbody tr:last-child td{border-bottom:0}td.key{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.text{white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;min-width:0}.status{white-space:nowrap;font-weight:600}.ok{color:var(--good)}.same,.override{color:var(--warn)}.missing{color:var(--bad)}.ruonly{color:var(--accent)}tr:hover{background:rgba(110,118,129,.08)}.small{font-size:12px;color:var(--muted)}
+@media(max-width:800px){header{position:static}.toolbar{grid-template-columns:1fr}.stats{gap:8px}main{padding:10px}.table-wrap{overflow-x:auto}thead th{position:static}.col-num{width:56px}.col-key{width:240px}}
 </style>
 </head>
 <body>
-<header>
+<header id="pageHeader">
   <h1>Undead Legacy v2.6 — сравнение English ↔ Russian</h1>
   <div class="toolbar">
     <input id="q" type="search" placeholder="Поиск по ключу, English или Russian…" autocomplete="off">
@@ -37,6 +37,7 @@ h1{font-size:20px;margin:0 0 10px}a{color:var(--accent)}.toolbar{display:grid;gr
   </div>
   <div class="table-wrap">
     <table>
+      <colgroup><col class="col-num"><col class="col-key"><col><col><col class="col-status"></colgroup>
       <thead><tr><th>#</th><th>Ключ</th><th>English</th><th>Russian</th><th>Статус</th></tr></thead>
       <tbody id="body"></tbody>
     </table>
@@ -47,6 +48,14 @@ const BASE='https://raw.githubusercontent.com/Kelthuzer/7D2D_UL_Localization/mai
 const EN=BASE+'English.txt', RU=BASE+'Russian.txt';
 enLink.href=EN; ruLink.href=RU;
 let rows=[];
+function updateStickyOffset(){
+  const h=document.getElementById('pageHeader');
+  const mobile=window.matchMedia('(max-width:800px)').matches;
+  document.documentElement.style.setProperty('--header-h',mobile?'0px':`${Math.ceil(h.getBoundingClientRect().height)}px`);
+}
+updateStickyOffset();
+window.addEventListener('resize',updateStickyOffset);
+if('ResizeObserver' in window)new ResizeObserver(updateStickyOffset).observe(document.getElementById('pageHeader'));
 function decodeValue(v){v=v.replace(/\r$/,'');if(v.length>=2&&v[0]=='"'&&v.at(-1)=='"')v=v.slice(1,-1).replace(/""/g,'"');return v}
 function parseLoose(text){const ls=text.replace(/^\uFEFF/,'').split(/\n/);const out=[];for(let i=1;i<ls.length;i++){const line=ls[i].replace(/\r$/,'');if(!line.trim())continue;const p=line.indexOf(',');if(p<0){out.push({line:i+1,key:line,value:''});continue}out.push({line:i+1,key:line.slice(0,p),value:decodeValue(line.slice(p+1))})}return out}
 function build(en,ru){
@@ -60,8 +69,8 @@ function build(en,ru){
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function label(s){return {ok:'OK',same:'EN = RU',override:'RU override',ruonly:'RU only',missing:'MISSING RU'}[s]||s}
-function render(){const q=document.getElementById('q').value.toLowerCase().trim(),f=document.getElementById('filter').value;const shown=rows.filter(r=>(f==='all'||r.status===f)&&(!q||r.key.toLowerCase().includes(q)||r.en.toLowerCase().includes(q)||r.ru.toLowerCase().includes(q)));document.getElementById('body').innerHTML=shown.map(r=>`<tr><td>${r.n}</td><td class="key" title="${r.dup?'Повторяющийся ключ':''}">${esc(r.key)}${r.dup?' <span class="small">×</span>':''}</td><td class="text">${esc(r.en)}</td><td class="text">${esc(r.ru)}</td><td class="status ${r.status}">${label(r.status)}</td></tr>`).join('');document.title=`${shown.length} строк — UL v2.6 EN ↔ RU`;}
-async function load(){stats.textContent='Загрузка…';try{const [et,rt]=await Promise.all([fetch(EN,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('English '+r.status);return r.text()}),fetch(RU,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Russian '+r.status);return r.text()})]);const en=parseLoose(et),ru=parseLoose(rt),b=build(en,ru);rows=b.out;const missing=rows.filter(x=>x.status==='missing').length,over=rows.filter(x=>x.status==='override').length,only=rows.filter(x=>x.status==='ruonly').length,same=rows.filter(x=>x.status==='same').length;stats.innerHTML=`<span>English: <b>${en.length}</b></span><span>Russian: <b>${ru.length}</b></span><span>Уникальных EN: <b>${b.eGroups.size}</b></span><span>Уникальных RU: <b>${b.rGroups.size}</b></span><span>Нет RU: <b>${missing}</b></span><span>Overrides: <b>${over}</b></span><span>RU only: <b>${only}</b></span><span>EN = RU: <b>${same}</b></span>`;render()}catch(e){stats.innerHTML=`<span class="missing">Ошибка загрузки: ${esc(e.message)}</span>`}}
+function render(){const q=document.getElementById('q').value.toLowerCase().trim(),f=document.getElementById('filter').value;const shown=rows.filter(r=>(f==='all'||r.status===f)&&(!q||r.key.toLowerCase().includes(q)||r.en.toLowerCase().includes(q)||r.ru.toLowerCase().includes(q)));document.getElementById('body').innerHTML=shown.map(r=>`<tr><td>${r.n}</td><td class="key" title="${esc(r.key)}${r.dup?' — повторяющийся ключ':''}">${esc(r.key)}${r.dup?' <span class="small">×</span>':''}</td><td class="text">${esc(r.en)}</td><td class="text">${esc(r.ru)}</td><td class="status ${r.status}">${label(r.status)}</td></tr>`).join('');document.title=`${shown.length} строк — UL v2.6 EN ↔ RU`;updateStickyOffset();}
+async function load(){stats.textContent='Загрузка…';try{const [et,rt]=await Promise.all([fetch(EN,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('English '+r.status);return r.text()}),fetch(RU,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Russian '+r.status);return r.text()})]);const en=parseLoose(et),ru=parseLoose(rt),b=build(en,ru);rows=b.out;const missing=rows.filter(x=>x.status==='missing').length,over=rows.filter(x=>x.status==='override').length,only=rows.filter(x=>x.status==='ruonly').length,same=rows.filter(x=>x.status==='same').length;stats.innerHTML=`<span>English: <b>${en.length}</b></span><span>Russian: <b>${ru.length}</b></span><span>Уникальных EN: <b>${b.eGroups.size}</b></span><span>Уникальных RU: <b>${b.rGroups.size}</b></span><span>Нет RU: <b>${missing}</b></span><span>Overrides: <b>${over}</b></span><span>RU only: <b>${only}</b></span><span>EN = RU: <b>${same}</b></span>`;render()}catch(e){stats.innerHTML=`<span class="missing">Ошибка загрузки: ${esc(e.message)}</span>`;updateStickyOffset()}}
 q.addEventListener('input',render);filter.addEventListener('change',render);reload.addEventListener('click',load);load();
 </script>
 </body>
