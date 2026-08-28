@@ -1,4 +1,4 @@
-Key,English
+﻿Key,English
 
 campfireActivate,"Open Campfire"
 caffeineBuzz,"Caffeine Rush"
@@ -398,6 +398,7 @@ uiKeyLockSlot,"[action:gui:GUILockSlot]"
 uiLevelShort,"LVL"
 uiLightRecharge,"[73E9B2][{0}][-] Recharge {1}"
 uiLightToggle,"[73E9B2][{0}][-] Toggle {1}"
+uiLoadingSkills,"Loading Skill Tree Data..."
 uiLocked,"Locked"
 uiLockAutoPick,"Auto-Pick"
 uiLockAutoPickChance,"Auto-Pick chance: [decea3]{0}%[-]"
@@ -3512,8 +3513,6 @@ ulmResourceAnyFlower,"Any Flower"
 ulmResourceAnySeed,"Any Seed"
 ulmResourceStonePowder,"Stone Powder"
 ulmResourceStonePowderDesc,"Finely ground Stone"
-ulmResourceSolarPanel,"Solar Panel"
-ulmResourceSolarPanelDesc,"Made up of many small solar cell units. When sunlight hits these cells, it knocks electrons loose from the atoms inside, creating an electric current — a process called the photovoltaic effect. Can be used in crafting Solar Arrays"
 ulmResourceSulfurPowder,"Sulfur Powder"
 ulmResourceSulfurPowderDesc,"Primarily made by scrapping sulfur ore, and is used to make gunpowder."
 ulmResourceTarp,"Tarp"
