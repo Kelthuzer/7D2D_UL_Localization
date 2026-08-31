@@ -1,0 +1,228 @@
+name: Apply latest Russian localization update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-latest-localization.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Translate and synchronize localization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from collections import defaultdict, deque
+          import re
+
+          EN = Path('V2.6/Mods/UndeadLegacy/Config/Localization/English.txt')
+          RU = Path('V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt')
+          README = Path('V2.6/README.md')
+          COMPARE = Path('V2.6/compare.html')
+          MARKER = 'DOWN_VANILA_FIX_REMEBER_COPY'
+          EXPECTED_EN_BLOB = '254193948fc89e1d17ac12febb414f6a0232112b'
+          EXPECTED_RU_BLOB = '09f96f7473e8c4d3520c893b1608cc74c231e079'
+
+          import subprocess
+          def blob(path):
+              return subprocess.check_output(['git','hash-object',str(path)], text=True).strip()
+
+          if blob(EN) != EXPECTED_EN_BLOB:
+              raise SystemExit(f'English.txt changed while preparing update: {blob(EN)}')
+          if blob(RU) != EXPECTED_RU_BLOB:
+              raise SystemExit(f'Russian.txt changed while preparing update: {blob(RU)}')
+
+          translations = {
+              'typeModsBelt': 'Мод пояса',
+              'ulmBackpackPrimitiveDesc': 'Сделан из самых простых материалов. Выглядит не слишком прочным, но всё же позволяет носить с собой больше вещей.',
+
+              'researchArmorLightT1': 'Броня фермера',
+              'researchArmorLightT1Desc': 'Научитесь создавать броню фермера 1-го уровня. Комплект состоит из лёгкой шляпы и лёгкого костюма, а также тяжёлых перчаток и ботинок.',
+              'researchArmorLightT2': 'Спортивная броня',
+              'researchArmorLightT2Desc': 'Научитесь создавать спортивную броню 2-го уровня. Комплект состоит из лёгкой кепки, лёгкого костюма, лёгких перчаток и лёгкой обуви.',
+              'researchArmorLightT3': 'Броня лесоруба',
+              'researchArmorLightT3Desc': 'Научитесь создавать броню лесоруба 3-го уровня. Комплект состоит из лёгкой шапки и лёгкого костюма, тяжёлых перчаток и средних ботинок.',
+              'researchArmorLightT4': 'Броня агента',
+              'researchArmorLightT4Desc': 'Научитесь создавать броню агента 4-го уровня. Комплект состоит из средней шляпы, лёгкого костюма, средних перчаток и лёгкой обуви.',
+              'researchArmorLightT5': 'Броня проповедника',
+              'researchArmorLightT5Desc': 'Научитесь создавать броню проповедника 5-го уровня. Комплект состоит из средней шляпы, лёгкого костюма, средних перчаток и лёгких ботинок.',
+
+              'researchArmorMediumT1': 'Броня мастера',
+              'researchArmorMediumT1Desc': 'Научитесь создавать броню мастера 1-го уровня. Комплект состоит из средней кепки, среднего костюма и средних перчаток, а также тяжёлых ботинок.',
+              'researchArmorMediumT2': 'Броня шахтёра',
+              'researchArmorMediumT2Desc': 'Научитесь создавать броню шахтёра 2-го уровня. Комплект состоит из средней каски и среднего костюма, а также тяжёлых перчаток и ботинок.',
+              'researchArmorMediumT3': 'Броня мусорщика',
+              'researchArmorMediumT3Desc': 'Научитесь создавать броню мусорщика 3-го уровня. Комплект состоит из средней кепки, среднего костюма и средних перчаток, а также лёгких ботинок.',
+              'researchArmorMediumT4': 'Броня разбойника',
+              'researchArmorMediumT4Desc': 'Научитесь создавать броню разбойника 4-го уровня. Комплект состоит из среднего капюшона и среднего костюма, а также лёгких перчаток и ботинок.',
+              'researchArmorMediumT5': 'Броня коммандос',
+              'researchArmorMediumT5Desc': 'Научитесь создавать броню коммандос 5-го уровня. Комплект состоит из средней кепки и среднего костюма, лёгких перчаток и средних ботинок.',
+
+              'researchArmorHeavyT1': 'Броня рейнджера',
+              'researchArmorHeavyT1Desc': 'Научитесь создавать броню рейнджера 1-го уровня. Комплект состоит из средней шляпы, тяжёлого костюма, средних перчаток и средних ботинок.',
+              'researchArmorHeavyT2': 'Броня байкера',
+              'researchArmorHeavyT2Desc': 'Научитесь создавать броню байкера 2-го уровня. Комплект состоит из тяжёлого шлема и тяжёлого костюма, лёгких перчаток и тяжёлых ботинок.',
+              'researchArmorHeavyT3': 'Броня охотника за головами',
+              'researchArmorHeavyT3Desc': 'Научитесь создавать броню охотника за головами 3-го уровня. Комплект состоит из среднего капюшона, тяжёлого костюма и тяжёлых перчаток, а также средних ботинок.',
+              'researchArmorHeavyT4': 'Броня рейдера',
+              'researchArmorHeavyT4Desc': 'Научитесь создавать броню рейдера 4-го уровня. Комплект состоит из тяжёлого шлема, тяжёлого костюма, тяжёлых перчаток и тяжёлых ботинок.',
+              'researchArmorHeavyT5': 'Броня кочевника',
+              'researchArmorHeavyT5Desc': 'Научитесь создавать броню кочевника 5-го уровня. Комплект состоит из тяжёлого головного убора и тяжёлого костюма, лёгких перчаток и средних ботинок.',
+
+              'challengeBurntHarvestOre': 'Добудьте [decea3]селитровую руду[-]',
+              'challengeBurntHarvestOreShort': 'Добудьте [decea3]селитровую руду[-]',
+              'challengeBurntHarvestOreDesc': 'Нитратный порошок — распространённый ресурс, но сначала нужно добыть селитровую руду и переработать её. Добудьте немного селитровой руды в Сгоревшем лесу.',
+          }
+
+          def key_of(line):
+              return line.split(',', 1)[0].lstrip('\ufeff')
+
+          def quote(value):
+              return '"' + value.replace('"', '""') + '"'
+
+          en_text = EN.read_text(encoding='utf-8-sig')
+          ru_text = RU.read_text(encoding='utf-8-sig')
+          en_lines = en_text.splitlines()
+          ru_lines = ru_text.splitlines()
+
+          marker_idx = next((i for i, line in enumerate(ru_lines) if line.startswith(MARKER + ',')), None)
+          if marker_idx is None:
+              raise SystemExit('Protected override marker not found')
+
+          ru_main_lines = ru_lines[:marker_idx]
+          tail = ru_lines[marker_idx:]
+          original_tail = list(tail)
+
+          groups = defaultdict(deque)
+          for line in ru_main_lines[1:]:
+              if not line.strip():
+                  continue
+              if ',' not in line:
+                  raise SystemExit(f'Malformed Russian row: {line!r}')
+              groups[key_of(line)].append(line)
+
+          new_main = ['Key,russian']
+          changed = []
+          added = []
+          for line in en_lines[1:]:
+              if not line.strip():
+                  new_main.append('')
+                  continue
+              if ',' not in line:
+                  raise SystemExit(f'Malformed English row: {line!r}')
+              key = key_of(line)
+              old = groups[key].popleft() if groups[key] else None
+              if key in translations:
+                  new = f'{key},{quote(translations[key])}'
+                  new_main.append(new)
+                  if old is None:
+                      added.append(key)
+                  elif old != new:
+                      changed.append(key)
+              else:
+                  if old is None:
+                      raise SystemExit(f'Missing Russian translation for new key: {key}')
+                  new_main.append(old)
+
+          leftovers = [(k, list(v)) for k, v in groups.items() if v]
+          if leftovers:
+              raise SystemExit('Unexpected Russian rows absent from English main block: ' + ', '.join(k for k,_ in leftovers[:20]))
+          if tail != original_tail:
+              raise SystemExit('Protected override tail changed')
+
+          en_keys = [key_of(x) for x in en_lines[1:] if x.strip()]
+          ru_keys = [key_of(x) for x in new_main[1:] if x.strip()]
+          if en_keys != ru_keys:
+              raise SystemExit('Russian main key order does not exactly match English')
+
+          RU.write_text('\n'.join(new_main + tail) + '\n', encoding='utf-8', newline='\n')
+
+          # Remove obsolete parser implementation note from comparison page.
+          compare = COMPARE.read_text(encoding='utf-8')
+          obsolete = ' Для исходного файла используется «мягкий» разбор строки по первой запятой: текущий English содержит историческую строку <code>waterTipDesc</code> с неэкранированной кавычкой <code>E"</code>.'
+          if obsolete not in compare:
+              raise SystemExit('Obsolete waterTipDesc note not found in compare.html')
+          COMPARE.write_text(compare.replace(obsolete, ''), encoding='utf-8', newline='\n')
+
+          # Refresh README counters and remove obsolete parser note.
+          readme = README.read_text(encoding='utf-8')
+          readme = re.sub(r'\n> `English\.txt` содержит исторические строки,.*$', '', readme, flags=re.S)
+
+          all_ru_lines = [x for x in (new_main[1:] + tail) if x.strip()]
+          all_ru_keys = [key_of(x) for x in all_ru_lines]
+          en_unique = len(set(en_keys))
+          ru_unique = len(set(all_ru_keys))
+          ru_only_unique = len(set(all_ru_keys) - set(en_keys))
+          main_count = len(en_keys)
+          total_ru = len(all_ru_keys)
+          tail_count = len([x for x in tail if x.strip()])
+
+          replacements = {
+              r'\| Строк в English \| \d+ \|': f'| Строк в English | {main_count} |',
+              r'\| Строк в Russian \| \d+ \|': f'| Строк в Russian | {total_ru} |',
+              r'\| Уникальных ключей English \| \d+ \|': f'| Уникальных ключей English | {en_unique} |',
+              r'\| Уникальных ключей Russian \| \d+ \|': f'| Уникальных ключей Russian | {ru_unique} |',
+              r'\| Дополнительных строк Russian после основного набора \| \*\*\d+\*\* \|': f'| Дополнительных строк Russian после основного набора | **{tail_count}** |',
+              r'\| Уникальных RU-only ключей \| \d+ \|': f'| Уникальных RU-only ключей | {ru_only_unique} |',
+              r'Первые \*\*\d+\*\* записей `Russian\.txt`': f'Первые **{main_count}** записей `Russian.txt`',
+              r'Оставшиеся \*\*\d+\*\* строк': f'Оставшиеся **{tail_count}** строк',
+          }
+          for pattern, repl in replacements.items():
+              readme, n = re.subn(pattern, repl, readme)
+              if n != 1:
+                  raise SystemExit(f'README pattern matched {n} times: {pattern}')
+          README.write_text(readme.rstrip() + '\n', encoding='utf-8', newline='\n')
+
+          # Technical QA for all translated keys: placeholders/tags/numbers in Russian must not lose source tokens.
+          def value_of(line):
+              return line.split(',', 1)[1]
+          en_map = {key_of(x): value_of(x) for x in en_lines[1:] if x.strip()}
+          ru_map = {key_of(x): value_of(x) for x in new_main[1:] if x.strip()}
+          token_re = re.compile(r'\{[^{}]+\}|\[[^\]]+\]|\\n|\d+(?:[.,]\d+)?%?')
+          for key in translations:
+              if key not in en_map or key not in ru_map:
+                  raise SystemExit(f'Translated key missing after sync: {key}')
+              en_tokens = token_re.findall(en_map[key])
+              ru_tokens = token_re.findall(ru_map[key])
+              if key.startswith('researchArmor'):
+                  # English prose tier/class numbers must remain, armor weights are words rather than tokens.
+                  en_nums = [t for t in en_tokens if re.fullmatch(r'\d+(?:[.,]\d+)?%?', t)]
+                  ru_nums = [t for t in ru_tokens if re.fullmatch(r'\d+(?:[.,]\d+)?%?', t)]
+                  if en_nums != ru_nums:
+                      raise SystemExit(f'Number mismatch for {key}: EN={en_nums}, RU={ru_nums}')
+              else:
+                  en_struct = [t for t in en_tokens if t.startswith('{') or t.startswith('[') or t == '\\n']
+                  ru_struct = [t for t in ru_tokens if t.startswith('{') or t.startswith('[') or t == '\\n']
+                  if en_struct != ru_struct:
+                      raise SystemExit(f'Structural token mismatch for {key}: EN={en_struct}, RU={ru_struct}')
+
+          print(f'English rows: {main_count}')
+          print(f'Russian rows: {total_ru}')
+          print(f'Protected tail rows: {tail_count}')
+          print(f'Added translations: {len(added)}')
+          print(f'Updated translations: {len(changed)}')
+          print('Removed obsolete waterTipDesc note from README and compare.html')
+          PY
+
+      - name: Commit localization update and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/apply-latest-localization.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt V2.6/README.md V2.6/compare.html .github/workflows/apply-latest-localization.yml
+          git diff --cached --check
+          git commit -m "Sync Russian localization with latest English"
+          git push origin HEAD:main
