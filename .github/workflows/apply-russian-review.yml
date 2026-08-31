@@ -1,4 +1,4 @@
-name: Apply Russian localization review
+name: Apply Tinkerer terminology fix
 
 on:
   push:
@@ -16,108 +16,39 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply reviewed translations
+      - name: Apply Tinkerer terminology
         shell: bash
         run: |
           set -euo pipefail
-          EN="V2.6/Mods/UndeadLegacy/Config/Localization/English.txt"
           RU="V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt"
-          test "$(git hash-object "$EN")" = "c481a522d05790d42f0136ee5cad1aa6a0ea7952"
-          test "$(git hash-object "$RU")" = "2cc875721d2e2d9809c049901768475ec5677a41"
+          test "$(git hash-object "$RU")" = "b26c0b226e618b36747f954c776fb0c8d63d1a33"
           python3 - <<'PY'
           from pathlib import Path
-          from collections import defaultdict, deque, Counter
-          import csv, re
 
-          EN=Path('V2.6/Mods/UndeadLegacy/Config/Localization/English.txt')
-          RU=Path('V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt')
-          REVIEW=Path('V2.6/TRANSLATION_REVIEW_V2.6.csv')
-          R={
-          'caffeineBuzzDesc':'Кофеин даёт энергию, временно поддерживая выносливость и температуру тела на более высоком уровне.',
-          'infectionDesc':'Вы инфицированы. Используйте антибиотики, мёд или растительные антибиотики, чтобы вылечить инфекцию. Без лечения вы будете слабеть и в конечном итоге умрёте.',
-          'quest_fetch_clear_response':'Принести/зачистить [DECEA3]{poi.name}[-] ([DECEA3]{poi.distance} {poi.direction}[-])',
-          'xuiGenCity':'Города','xuiGenRural':'Посёлки','xuiNoSellPrice':' ','xuiModifiers':'Модификаторы','xuiRwgWorldSeed':'Семя мира','xuiSharedWaypoints':'Общие','xuiWaypoints':'Сохранённые',
-          'uiTransferAll':r'Переместить все предметы\nиз рюкзака в контейнер','uiTransferStackables':r'Переместить все складываемые в стопки предметы\nиз рюкзака в контейнер',
-          'videoAntiAliasingDesc':'Устраняет ступенчатость краёв объектов.',
-          'generalUnloadUnusedAssetsDesc':r'Включает или отключает встроенную выгрузку неиспользуемых ресурсов из системной памяти. При отключении игра будет использовать больше системной памяти, но интерфейс станет отзывчивее, а зависания при взаимодействиях будут происходить реже.\n[decea3][По умолчанию: включено][-]',
-          'videoShowStatValues':'Числа на шкалах','videoShowStatValuesDesc':r'Показывает числовые значения некоторых параметров игрока на HUD.\n[decea3][По умолчанию: Инвентарь][-]',
-          'videoShowPlayerLevelOnHUDDesc':'Показывает текущий уровень игрока над полосой опыта пояса инструментов.',
-          'videoShowWaterDesc':r'Показывает шкалу воды на HUD, если уровень воды падает ниже указанного значения.\n[decea3][По умолчанию: 50%][-]',
-          'videoShowFoodDesc':r'Показывает шкалу еды на HUD, если уровень еды падает ниже указанного значения.\n[decea3][По умолчанию: 50%][-]',
-          'drinkJarGrandpasForgettingElixirDesc':'Сбрасывает очки перков и позволяет перераспределить их между атрибутами и перками. Практические навыки не затрагиваются.',
-          'gunPistolDesc':'Базовый пистолет, разработанный Kiloton Ballistics для обычного гражданского применения. Для работы требуется магазин.',
-          'gunBotT1JunkSledgeDesc':'Роботизированная турель ближнего боя. Устанавливается вторичным действием.','gunHandgunT1PistolDesc':'Штатный пистолет.','gunRifleT2MarksmanRifleDesc':'Винтовка среднего уровня с хорошей огневой мощью.',
-          'gunShotgunT3AutoShotgunDesc':'Полуавтоматический дробовик — очень разрушительное оружие на ближней дистанции, способное превратить в фарш всё на своём пути.',
-          'gunExplosivesT3RocketLauncher':'Ракетница','resourceRocketCasingDesc':'Корпус ракеты используется для изготовления боеприпасов для ракетницы.','resourceRocketTipDesc':'Ракетный взрыватель используется для изготовления боеприпасов для ракетницы.',
-          'meleeWpnKnucklesT3SteelKnucklesDesc':'Защищает руки и делает удары сильнее. Также подходит для свежевания животных.','meleeWpnSpearT0StoneSpearDesc':'Можно использовать как примитивное оружие ближнего боя.','meleeWpnSpearT1IronSpearDesc':'Можно использовать как оружие ближнего боя.','meleeWpnSpearT3SteelSpearDesc':'Можно использовать как оружие ближнего боя.',
-          'modArmorAgilityDesc':'Биомеханический комплект улучшения, который при установке в головной убор повышает ловкость владельца.','modArmorPerceptionDesc':'Биомеханический комплект улучшения, который при установке в головной убор повышает восприятие владельца.','modArmorStrengthDesc':'Биомеханический комплект улучшения, который при установке в головной убор повышает силу владельца.','modArmorFortitudeDesc':'Биомеханический комплект улучшения, который при установке в головной убор повышает стойкость владельца.','modArmorIntellectDesc':'Биомеханический комплект улучшения, который при установке в головной убор повышает интеллект владельца.','modArmorInsulatedLinerDesc':'Эта модификация брони защищает от холода.',
-          'resourceFishingWeightDesc':'Свинцовые предметы можно переработать в лом свинца в [decea3]Переработчике[-].','resourceLegendaryPartsDesc':'Хорошо сохранившиеся заводские детали высшего качества, которые можно использовать для улучшения предметов до максимального качества.','ulmAmmo50CalRoundSTDesc':'.50 Cal [decea3]стандартные[-] патроны, обычно используемые в [decea3]снайперских винтовках[-].','ulmStorageWoodChest3SecureDesc':r'[decea3]Можно запереть.[-]\nПрочный сундук из дерева.','ulmArmorFirefighterHelmetRusty':'Пожарный шлем (ржавый)','ulmArmorHardHatYellow':'Строительная каска (жёлтая)',
-          'buffAutoWeaponsComplete':'Ускорение от автоматического оружия','actionPerkHealing1':'Медицинские предметы эффективнее на [decea3]10%[-]','actionPerkHealing2':'Медицинские предметы эффективнее на [decea3]20%[-]','actionPerkHealing3':'Медицинские предметы эффективнее на [decea3]30%[-]','actionPerkHealing4':'Медицинские предметы эффективнее на [decea3]40%[-]','actionPerkHealing5':'Медицинские предметы эффективнее на [decea3]50%[-]',
-          'actionPerkHandgunsEffect':r'Улучшает скорострельность, скорость перезарядки, урон и прицеливание [decea3]пистолетов[-] \nна [decea3]0.25%[-].','actionPerkBladesEffect':'Повышает урон клинкового оружия, скорость атаки и шанс расчленения на [decea3]0.25%[-]. Эффективность добычи мяса повышается на [decea3]0.4%[-].','actionPerkAthletics2':r'Максимум выносливости [decea3]+10%[-]\nВосстановление выносливости при спринте [decea3]10%[-]','actionPerkAthletics3':r'Максимум выносливости [decea3]+15%[-]\nВосстановление выносливости при спринте [decea3]15%[-]','actionPerkAthletics4':r'Максимум выносливости [decea3]+20%[-]\nВосстановление выносливости при спринте [decea3]20%[-]','actionPerkAthletics5':r'Максимум выносливости [decea3]+25%[-]\nВосстановление выносливости при спринте [decea3]25%[-]','actionPerkSubmachineGunsEffect':r'Улучшает скорострельность, скорость перезарядки, урон и прицеливание [decea3]пистолетов-пулемётов[-] \nна [decea3]0.25%[-].',
-          'perkSniperAPAmmoDesc':'Создание боеприпасов [decea3]AP 7.92мм[-].','perkSniperAPAmmoLongDesc':'Обучает изготовлению боеприпасов [decea3]AP 7.92мм[-].','perkSniperHPAmmoDesc':'Создание боеприпасов [decea3]HP 7.92мм[-].','perkSniperHPAmmoLongDesc':'Обучает изготовлению боеприпасов [decea3]HP 7.92мм[-].',
-          'plantedCropsGroupDesc':'Посадите эти семена на создаваемом фермерском участке, чтобы вырастить растения для сбора урожая.','shotgunTurretDesc':'Автоматическая оборонительная турель с дробовиком и датчиком движения. Для работы требуются питание и боеприпасы.','tableSaw':'Сломанная настольная пила','trapSpikesIronDmg0':'Железные шипы','trapSpikesWoodDmg0':'Деревянные шипы','wallClockRandomLootHelper':'Настенные часы | Случайный вариант',
-          'flashlightDecorWhite_Player':'Белый фонарик','flashlightDecorRed_Player':'Красный фонарик','flashlightDecorOrange_Player':'Оранжевый фонарик','flashlightDecorYellow_Player':'Жёлтый фонарик','flashlightDecorGreen_Player':'Зелёный фонарик','flashlightDecorBlue_Player':'Синий фонарик',
-          'deco_remnant_wood_02':'Руины деревянного дома 1','utility_celltower_02':'Вышка сотовой связи 2','remnant_waste_04':'Разрушенная кофейня Zip-Coffee','remnant_waste_06':'Разрушенный офис Eye Kandy','office_02':'Офис Rise Realty','oldwest_strip_04':'Металлообработка','oldwest_watertower':'Старая водонапорная башня','parking_garage_01':'Паркинг','parking_garage_02':'Паркинг Buy N Go','ranger_station_01':'Станция рейнджеров 1','ranger_station_02':'Станция рейнджеров 2','ranger_station_03':'Станция рейнджеров 3','ranger_station_04':'Станция рейнджеров 4','ranger_station_05':'Станция рейнджеров 5','ranger_station_06':'Станция рейнджеров 6','ranger_station_07':'Станция рейнджеров 7','store_grocery_03':'Продуктовый магазин Buy N Go','factory_lg_02':'Завод Shotgun Messiah','remnant_waste_15':'Разрушенный склад JD Shipping',
-          'tankPropaneWhite':'Белый газовый баллон','tankPropaneWhiteDesc':'Используется для хранения газов.','tankPropaneBrown':'Коричневый газовый баллон','tankPropaneBrownDesc':'Используется для хранения газов.','tankPropaneRed':'Красный газовый баллон','tankPropaneRedDesc':'Используется для хранения газов.','tankPropaneOrange':'Оранжевый газовый баллон','tankPropaneOrangeDesc':'Используется для хранения газов.','tankPropaneYellow':'Жёлтый газовый баллон','tankPropaneYellowDesc':'Используется для хранения газов.','tankPropaneGreen':'Зелёный газовый баллон','tankPropaneGreenDesc':'Используется для хранения газов.','tankPropaneBlue':'Синий газовый баллон','tankPropaneBlueDesc':'Используется для хранения газов.','tankPropaneGrey':'Серый газовый баллон','tankPropaneGreyDesc':'Используется для хранения газов.','tankPropanePink':'Розовый газовый баллон','tankPropanePinkDesc':'Используется для хранения газов.',
-          'shippingContainerDoorsClosedWhite':'Белые закрытые двери грузового контейнера','shippingContainerDoorFrameWhite':'Белая дверная рама грузового контейнера','shippingContainerDoorLeftOpenWhite':'Белая левая открытая дверь грузового контейнера','shippingContainerDoorLeftRotatedWhite':'Белая левая повёрнутая дверь грузового контейнера','shippingContainerDoorRightOpenWhite':'Белая правая открытая дверь грузового контейнера','shippingContainerSideWhite':'Белая боковая стенка грузового контейнера','shippingContainerSideTextWhite':'Белая боковая стенка грузового контейнера с текстом','shippingContainerSideHoleWhite':'Белая боковая стенка грузового контейнера с отверстием','shippingContainerCapWhite':'Белая торцевая часть грузового контейнера',
-          'ulmDoorIndustrial03bSingle':'Промышленная дверь 3-B','ulmDoorIndustrial03bSingleNoGlass':'Промышленная дверь 3-B','ulmDoorIndustrial12bSingle':'Промышленная дверь 12-B','ulmDoorIndustrial12bSingleNoGlass':'Промышленная дверь 12-B','ulmDoorIndustrial12cSingle':'Промышленная дверь 12-C','ulmDoorIndustrial12cSingleNoGlass':'Промышленная дверь 12-C',
-          'cntCabinetOldBottomLootHelper':'Старый шкаф | Случайный вариант','cntGarageRandomLootHelper':'Гаражная добыча | Случайный вариант','cntLockersShortRandomLootHelper':'Низкие шкафчики | Случайный вариант','cntLockersTallRandomLootHelper':'Высокие шкафчики | Случайный вариант','cntLockersTallDoubleRandomLootHelper':'Высокие двойные шкафчики | Случайный вариант','cntLockersTallMixRandomLootHelper':'Смешанные шкафчики 1 | Случайный вариант','cntLockersTallMixLinkRandomLootHelper':'Смешанные шкафчики 2 | Случайный вариант','cntLuggagePileARandomLootHelper':'Куча багажа A | Случайный вариант','cntLuggagePileBRandomLootHelper':'Куча багажа B | Случайный вариант','cntShoesPileRandomLootHelper':'Куча обуви | Случайный вариант','cntWasherIndustrialRandomLootHelper':'Промышленная стиральная машина | Случайный вариант','cntWastelandRandomLootHelper':'Добыча пустоши | Случайный вариант','cntWoodDesk01RandomLootHelper':'Деревянный стол | Случайный вариант',
-          'uiLockpickingInsufficient':'Ваш уровень взлома [FF1919]{0}[-] недостаточно высок для взлома замка уровня [decea3]{1}[-].','uiUpgradeMax':'Дальнейшие улучшения невозможны','animalBossGrace':'Мутировавший гигантский кабан','typeRocketLaunchers':'Ракетница',
-          'ulmEquippingItemBlocked':'Нельзя экипировать: {0} запрещает экипировку этого предмета.','uiRequiresItem':'Требуется предмет [73E9B2]{0}[-]','foodBurntSmoothie':'Сыворотка «Чёрные лёгкие»','foodBurntSmoothieDesc':'Частично помогает вылечить инфекцию лёгких и повышает скорость передвижения в биоме сгоревшего леса.','foodOasisSmoothie':'Тоник от солнечного удара','foodOasisSmoothieDesc':'Повышает сопротивление жаре и скорость передвижения в пустыне.','foodFrostbiteSmoothie':'Обжигающее рагу','foodFrostbiteSmoothieDesc':'Повышает сопротивление холоду и скорость передвижения в снежном биоме.','foodAtomicSmoothie':'Очищение от радиации','foodAtomicSmoothieDesc':'Повышает сопротивление холоду и жаре, а также скорость передвижения в пустоши.','challengeBurntGatherGear':'Соберите ресурсы в сгоревшем биоме','challengeBurntGatherGearShort':'Соберите несколько ресурсов в сгоревшем биоме','challengeBurntGatherGearDesc':'Некоторые предметы помогут вам лучше выживать. Соберите их и выполните все испытания в сгоревшем биоме, чтобы получить дополнительную награду в 10000 опыта'
+          path = Path('V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              'armorNerdOutfit,"Костюм мастера"': 'armorNerdOutfit,"Костюм ботана"',
+              'armorNerdGloves,"Перчатки мастера"': 'armorNerdGloves,"Перчатки ботана"',
+              'armorNerdBoots,"Ботинки мастера"': 'armorNerdBoots,"Ботинки ботана"',
+              'researchArmorMediumT1,"Броня мастера"': 'researchArmorMediumT1,"Броня ботана"',
+              'researchArmorMediumT1Desc,"Научитесь создавать броню мастера 1-го уровня. Комплект состоит из средней кепки, среднего костюма и средних перчаток, а также тяжёлых ботинок."': 'researchArmorMediumT1Desc,"Научитесь создавать броню ботана 1-го уровня. Комплект состоит из средней кепки, среднего костюма и средних перчаток, а также тяжёлых ботинок."',
           }
-
-          def parse(line):
-              if not line or ',' not in line: return None
-              k,v=line.split(',',1)
-              if len(v)>=2 and v[0]=='"' and v[-1]=='"': v=v[1:-1]
-              return k,v
-          def mk(k,v):
-              if '"' in v: raise RuntimeError(k)
-              return f'{k},"{v}"'
-
-          en_lines=EN.read_text(encoding='utf-8-sig').splitlines()
-          ru_lines=RU.read_text(encoding='utf-8-sig').splitlines()
-          ti=next(i for i,l in enumerate(ru_lines) if l.startswith('DOWN_VANILA_FIX_REMEBER_COPY,'))
-          tail=ru_lines[ti:]
-          q=defaultdict(deque)
-          for l in ru_lines[:ti]:
-              p=parse(l)
-              if p and p[0]!='Key': q[p[0]].append(l)
-          er=[]; nm=['Key,russian','']
-          for l in en_lines:
-              p=parse(l)
-              if not p or p[0]=='Key': continue
-              k,e=p; er.append((k,e))
-              if k in R: nm.append(mk(k,R[k]))
-              elif q[k]: nm.append(q[k].popleft())
-              else: raise RuntimeError('Missing Russian: '+k)
-          rr=[parse(l) for l in nm if parse(l) and parse(l)[0]!='Key']
-          if len(er)!=7287 or len(rr)!=7287: raise RuntimeError('row count')
-          if any(a[0]!=b[0] for a,b in zip(er,rr)): raise RuntimeError('key order')
-          def nums(s): return Counter(re.findall(r'(?<![\w])[-+]?(?:\d+(?:\.\d+)?|\.\d+)',s))
-          def ph(s): return Counter(re.findall(r'\{\{?[^{}]+\}\}?',s))
-          def act(s): return Counter(re.findall(r'\[action:[^\]]+\]',s))
-          def colors(s): return len(re.findall(r'\[(?:[0-9A-Fa-f]{6}|decea3)\]',s))
-          for (k,e),(_,r) in zip(er,rr):
-              if k not in R: continue
-              if nums(e)!=nums(r) or ph(e)!=ph(r) or act(e)!=act(r) or colors(e)!=colors(r) or e.count('[-]')!=r.count('[-]') or e.count(r'\n')!=r.count(r'\n'):
-                  raise RuntimeError('syntax mismatch: '+k)
-          RU.write_text('\n'.join(nm+tail)+'\n',encoding='utf-8',newline='\n')
-          with REVIEW.open('w',encoding='utf-8-sig',newline='') as f:
-              w=csv.writer(f,lineterminator='\n'); w.writerow(['номер','ключ','Английское содержание','Русское']); n=1
-              for (k,e),(_,r) in zip(er,rr): w.writerow([n,k,e,r]); n+=1
-              for l in tail:
-                  p=parse(l)
-                  if p: w.writerow([n,p[0],'',p[1]]); n+=1
-          print('reviewed/new',len(R),'rows',len(rr),'tail',sum(bool(parse(x)) for x in tail))
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'Expected exactly one occurrence: {old}')
+              text = text.replace(old, new)
+          path.write_text(text, encoding='utf-8', newline='\n')
           PY
 
-      - name: Commit
+      - name: Commit fix and remove workflow
         shell: bash
         run: |
           set -euo pipefail
+          rm -f .github/workflows/apply-russian-review.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt V2.6/TRANSLATION_REVIEW_V2.6.csv
-          git commit -m "Update Russian localization and review translation quality"
+          git add V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt .github/workflows/apply-russian-review.yml
+          git diff --cached --check
+          git commit -m "Use Botан terminology for Tinkerer armor"
           git push origin HEAD:main
