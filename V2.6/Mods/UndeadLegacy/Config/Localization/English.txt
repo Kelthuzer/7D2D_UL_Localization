@@ -1,4 +1,4 @@
-Key,English
+﻿Key,English
 
 campfireActivate,"Open Campfire"
 caffeineBuzz,"Caffeine Rush"
@@ -3685,6 +3685,7 @@ ulmBuffLungInfectionStage1Tooltip,"You are suffering from Stage 1 Lung Infection
 ulmBuffLungInfectionStage2Tooltip,"You are suffering from Stage 2 Lung Infection!"
 ulmBuffPollutedAir,"Polluted Air"
 ulmBuffPollutedAirDesc,"The air is too polluted to breath, either equip a Gas Mask or seek shelter nearby an Air Purifier to avoid further Lung Damage."
+ulmBuffPollutedAirTooltip,"The air is too polluted to breath without a Gas Mask or active Air Purifier nearby!"
 ulmBuffWeatherHot1,"Hot"
 ulmBuffWeatherHot1Desc,"You are hot. Find clothing or take shelter. When you're hot you will get thirsty faster."
 ulmBuffWeatherHot2,"Sweltering"
@@ -4040,7 +4041,7 @@ skillTreeShotgunStun3Desc,"Attacks with Shotgun stun enemies for additional [dec
 skillTreeSniperDamageDesc,"[decea3]{0}[-] increased Sniper Rifle Physical Damage"
 skillTreeSniperDeadEyeDesc,"[decea3]{0}[-] decreased stamina consumption while aiming with Sniper Rifles\nSuccessive kills can trigger up to [decea3]{1}[-] more kill streak bonus damage"
 skillTreeSniperHandlingDesc,"[decea3]{0}[-] improved Sniper Rifle Aim and Reload Speed"
-skillTreeSniperPenetrationDesc,"[decea3]{0}[-] to Sniper Rifle Target Penetration"
+skillTreeSniperPenetrationDesc,"[decea3]{0}[-] to Sniper Rifle Target Penetration.\nRequires AP Rounds."
 skillTreeMachineGunDamageDesc,"[decea3]{0}[-] increased Machine Gun Physical Damage"
 skillTreeMachineGunHandlingDesc,"[decea3]{0}[-] improved Machine Gun Handling, Aim and Reload Speed"
 skillTreeMachineGunCommandoDesc,"Recover [decea3]{0}[-] Stamina on each successful shot using Machine Guns"
@@ -7265,6 +7266,15 @@ challengeBurntGatherGearDesc,"Several items could help you survive better. Colle
 challengeBurntHarvestOre,"Harvest [decea3]Saltpeter Ore[-]"
 challengeBurntHarvestOreShort,"Harvest [decea3]Saltpeter Ore[-]"
 challengeBurntHarvestOreDesc,"Nitrate Powder is a plentiful resource, but in order to get it you first have to mine Saltpeter Ore and process it. Harvest some Saltpeter Ore while in the Burnt Forest."
+challengeDesertGatherGear,"Gather items in Desert Biome"
+challengeDesertGatherGearShort,"Gather some items from the Desert Biome."
+challengeDesertGatherGearDesc,"You can find several useful items in Desert Biome. Collect these items and complete all the challenges in the Desert Biome."
+challengeSnowGatherGear,"Gather items in the Snow Biome"
+challengeSnowGatherGearShort,"Gather some items from the Snow Biome."
+challengeSnowGatherGearDesc,"You can find several useful items in the Snow Biome. Collect these items and complete all the challenges in the Snow Biome."
+wastelandSurvivalGatherGear,"Gather items in the Wasteland Biome"
+challengeWastelandGatherGearShort,"Gather some items from the Wasteland Biome."
+challengeWastelandGatherGearDesc,"You can find several useful items in the Wasteland Biome. Collect these items and complete all the challenges in the Wasteland Biome."
 ulmChallengeDuffleBagName,"Bug-out Bag"
 ulmChallengeDuffleBagShort,"[decea3]Place[-] down your [decea3]Bug-out Bag[-] and check its contents."
 ulmChallengeDuffleBagDesc,"It seems that you have a [decea3]Bug-out Bag[-] in your [decea3]Toolbelt[-]. Place it down on the ground an then open it, maybe there's something useful inside?"
