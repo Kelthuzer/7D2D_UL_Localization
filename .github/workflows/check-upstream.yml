@@ -1,4 +1,4 @@
-name: Check Subquake upstream localization
+name: Sync Subquake upstream localization
 
 on:
   workflow_dispatch:
@@ -6,32 +6,63 @@ on:
     - cron: "23 3 * * *"
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: sync-subquake-upstream
+  cancel-in-progress: false
 
 jobs:
-  check-upstream:
+  sync-upstream:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Download upstream English.txt
+      - name: Resolve latest Subquake main commit
+        id: upstream
         shell: bash
         run: |
           set -euo pipefail
+
+          REPO_URL="https://gitlab.com/subquakesgroup/UndeadLegacyExperimentalPart1.git"
+          UPSTREAM_SHA="$(git ls-remote "$REPO_URL" refs/heads/main | awk '{print $1}')"
+
+          if ! [[ "$UPSTREAM_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Could not resolve GitLab main commit: '$UPSTREAM_SHA'"
+            exit 1
+          fi
+
+          echo "sha=$UPSTREAM_SHA" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${UPSTREAM_SHA:0:12}" >> "$GITHUB_OUTPUT"
+          echo "Resolved Subquake main: $UPSTREAM_SHA"
+
+      - name: Download upstream English.txt from resolved commit
+        shell: bash
+        env:
+          UPSTREAM_SHA: ${{ steps.upstream.outputs.sha }}
+        run: |
+          set -euo pipefail
           mkdir -p .upstream
+
+          URL="https://gitlab.com/subquakesgroup/UndeadLegacyExperimentalPart1/-/raw/${UPSTREAM_SHA}/Mods/UndeadLegacy/Config/Localization/English.txt"
+          echo "Downloading: $URL"
+
           curl \
             --fail \
             --location \
             --silent \
             --show-error \
-            --retry 3 \
+            --retry 5 \
+            --retry-all-errors \
             --retry-delay 3 \
             --connect-timeout 20 \
-            --max-time 120 \
+            --max-time 180 \
             --user-agent "Mozilla/5.0 GitHubActions/7D2D_UL_Localization" \
-            "https://gitlab.com/subquakesgroup/UndeadLegacyExperimentalPart1/-/raw/main/Mods/UndeadLegacy/Config/Localization/English.txt" \
+            "$URL" \
             --output .upstream/upstream-English.raw
 
       - name: Normalize and validate files
@@ -55,6 +86,9 @@ jobs:
           upstream_lines = upstream.splitlines()
           if len(upstream_lines) < 5000:
               raise SystemExit(f'Downloaded file looks incomplete: only {len(upstream_lines)} lines')
+
+          if len(upstream_raw) < 300_000:
+              raise SystemExit(f'Downloaded file looks incomplete: only {len(upstream_raw)} bytes')
 
           Path('.upstream/upstream-English.txt').write_text(upstream, encoding='utf-8', newline='\n')
           Path('.upstream/current-English.txt').write_text(current, encoding='utf-8', newline='\n')
@@ -91,12 +125,47 @@ jobs:
             echo "upstream_sha256=$UPSTREAM_SHA"
             echo "current_lines=$CURRENT_LINES"
             echo "upstream_lines=$UPSTREAM_LINES"
+            echo "gitlab_commit=${{ steps.upstream.outputs.sha }}"
             echo "checked_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           } | tee .upstream/status.txt
 
           echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
-          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
-          echo "upstream_sha=$UPSTREAM_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Update repository English.txt
+        if: steps.compare.outputs.changed == 'true'
+        shell: python
+        run: |
+          from pathlib import Path
+
+          src = Path('.upstream/upstream-English.txt').read_text(encoding='utf-8')
+          dst = Path('V2.6/Mods/UndeadLegacy/Config/Localization/English.txt')
+
+          # Keep the localization file in normalized LF UTF-8 with BOM,
+          # matching the current upstream/source-file convention.
+          dst.write_text('\ufeff' + src, encoding='utf-8', newline='\n')
+
+      - name: Commit upstream update
+        if: steps.compare.outputs.changed == 'true'
+        shell: bash
+        env:
+          UPSTREAM_SHA: ${{ steps.upstream.outputs.sha }}
+          UPSTREAM_SHORT_SHA: ${{ steps.upstream.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add V2.6/Mods/UndeadLegacy/Config/Localization/English.txt
+
+          if git diff --cached --quiet; then
+            echo "Normalized upstream is identical; nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "Update English.txt from Subquake ${UPSTREAM_SHORT_SHA}" \
+                     -m "Upstream commit: ${UPSTREAM_SHA}"
+          git push origin HEAD:main
 
       - name: Write job summary
         shell: bash
@@ -106,13 +175,15 @@ jobs:
           {
             echo "## Subquake upstream localization"
             echo
+            echo "GitLab main commit: \`${gitlab_commit}\`"
+            echo
             if [ "$changed" = "true" ]; then
-              echo "**Update detected.**"
+              echo "**Update detected and English.txt was synchronized to main.**"
             else
               echo "**No localization update detected.**"
             fi
             echo
-            echo "| Check | Repository | Upstream |"
+            echo "| Check | Repository before sync | Upstream |"
             echo "|---|---:|---:|"
             echo "| Lines | $current_lines | $upstream_lines |"
             echo "| SHA-256 | \`${current_sha256}\` | \`${upstream_sha256}\` |"
