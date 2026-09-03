@@ -13,191 +13,102 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  sync-upstream:
+  sync:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Resolve latest Subquake main commit
+      - name: Check upstream revision
         id: upstream
         shell: bash
         run: |
           set -euo pipefail
-
-          REPO_URL="https://gitlab.com/subquakesgroup/UndeadLegacyExperimentalPart1.git"
-          UPSTREAM_SHA="$(git ls-remote "$REPO_URL" refs/heads/main | awk '{print $1}')"
-
-          if ! [[ "$UPSTREAM_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "Could not resolve GitLab main commit: '$UPSTREAM_SHA'"
-            exit 1
-          fi
-
-          echo "sha=$UPSTREAM_SHA" >> "$GITHUB_OUTPUT"
-          echo "short_sha=${UPSTREAM_SHA:0:12}" >> "$GITHUB_OUTPUT"
-          echo "Resolved Subquake main: $UPSTREAM_SHA"
-
-      - name: Download upstream English.txt from resolved commit
-        shell: bash
-        env:
-          UPSTREAM_SHA: ${{ steps.upstream.outputs.sha }}
-        run: |
-          set -euo pipefail
-          mkdir -p .upstream
-
-          URL="https://gitlab.com/subquakesgroup/UndeadLegacyExperimentalPart1/-/raw/${UPSTREAM_SHA}/Mods/UndeadLegacy/Config/Localization/English.txt"
-          echo "Downloading: $URL"
-
-          curl \
-            --fail \
-            --location \
-            --silent \
-            --show-error \
-            --retry 5 \
-            --retry-all-errors \
-            --retry-delay 3 \
-            --connect-timeout 20 \
-            --max-time 180 \
-            --user-agent "Mozilla/5.0 GitHubActions/7D2D_UL_Localization" \
-            "$URL" \
-            --output .upstream/upstream-English.raw
-
-      - name: Normalize and validate files
-        shell: python
-        run: |
-          from pathlib import Path
-
-          upstream_raw = Path('.upstream/upstream-English.raw').read_bytes()
-          current_raw = Path('V2.6/Mods/UndeadLegacy/Config/Localization/English.txt').read_bytes()
-
-          def normalize(data: bytes) -> str:
-              text = data.decode('utf-8-sig')
-              return text.replace('\r\n', '\n').replace('\r', '\n')
-
-          upstream = normalize(upstream_raw)
-          current = normalize(current_raw)
-
-          if not upstream.startswith('Key,English\n'):
-              raise SystemExit('Downloaded file is not a valid Undead Legacy English localization: missing Key,English header')
-
-          upstream_lines = upstream.splitlines()
-          if len(upstream_lines) < 5000:
-              raise SystemExit(f'Downloaded file looks incomplete: only {len(upstream_lines)} lines')
-
-          if len(upstream_raw) < 300_000:
-              raise SystemExit(f'Downloaded file looks incomplete: only {len(upstream_raw)} bytes')
-
-          Path('.upstream/upstream-English.txt').write_text(upstream, encoding='utf-8', newline='\n')
-          Path('.upstream/current-English.txt').write_text(current, encoding='utf-8', newline='\n')
-
-      - name: Compare with repository version
-        id: compare
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          CURRENT=.upstream/current-English.txt
-          UPSTREAM=.upstream/upstream-English.txt
-          DIFF=.upstream/upstream.diff
-
-          if cmp -s "$CURRENT" "$UPSTREAM"; then
-            CHANGED=false
-            : > "$DIFF"
+          URL="https://gitlab.com/subquakesgroup/UndeadLegacyExperimentalPart1.git"
+          NEW="$(git ls-remote "$URL" refs/heads/main | awk '{print $1}')"
+          OLD="$(tr -d '\r\n ' < .github/subquake-upstream.sha)"
+          [[ "$NEW" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$NEW" >> "$GITHUB_OUTPUT"
+          if [ "$NEW" = "$OLD" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Subquake main unchanged: $NEW"
           else
-            CHANGED=true
-            diff -u \
-              --label "repository/V2.6/English.txt" \
-              --label "Subquake/main/English.txt" \
-              "$CURRENT" "$UPSTREAM" > "$DIFF" || true
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Subquake main changed: $OLD -> $NEW"
           fi
 
-          CURRENT_SHA=$(sha256sum "$CURRENT" | cut -d' ' -f1)
-          UPSTREAM_SHA=$(sha256sum "$UPSTREAM" | cut -d' ' -f1)
-          CURRENT_LINES=$(wc -l < "$CURRENT" | tr -d ' ')
-          UPSTREAM_LINES=$(wc -l < "$UPSTREAM" | tr -d ' ')
+      - name: Download changed English.txt
+        if: steps.upstream.outputs.changed == 'true'
+        env:
+          SHA: ${{ steps.upstream.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://gitlab.com/subquakesgroup/UndeadLegacyExperimentalPart1/-/raw/${SHA}/Mods/UndeadLegacy/Config/Localization/English.txt" \
+            -o /tmp/English.txt
 
-          {
-            echo "changed=$CHANGED"
-            echo "current_sha256=$CURRENT_SHA"
-            echo "upstream_sha256=$UPSTREAM_SHA"
-            echo "current_lines=$CURRENT_LINES"
-            echo "upstream_lines=$UPSTREAM_LINES"
-            echo "gitlab_commit=${{ steps.upstream.outputs.sha }}"
-            echo "checked_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          } | tee .upstream/status.txt
-
-          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
-
-      - name: Update repository English.txt
-        if: steps.compare.outputs.changed == 'true'
+      - name: Validate and synchronize
+        if: steps.upstream.outputs.changed == 'true'
+        id: sync
         shell: python
         run: |
           from pathlib import Path
 
-          src = Path('.upstream/upstream-English.txt').read_text(encoding='utf-8')
+          src = Path('/tmp/English.txt').read_bytes()
           dst = Path('V2.6/Mods/UndeadLegacy/Config/Localization/English.txt')
 
-          # Keep the localization file in normalized LF UTF-8 with BOM,
-          # matching the current upstream/source-file convention.
-          dst.write_text('\ufeff' + src, encoding='utf-8', newline='\n')
+          def norm(data):
+              return data.decode('utf-8-sig').replace('\r\n', '\n').replace('\r', '\n')
 
-      - name: Commit upstream update
-        if: steps.compare.outputs.changed == 'true'
-        shell: bash
+          upstream = norm(src)
+          current = norm(dst.read_bytes())
+          if not upstream.startswith('Key,English\n'):
+              raise SystemExit('Invalid English.txt header')
+          if len(upstream.splitlines()) < 5000 or len(src) < 300000:
+              raise SystemExit('Downloaded English.txt looks incomplete')
+
+          changed = upstream != current
+          if changed:
+              dst.write_text('\ufeff' + upstream, encoding='utf-8', newline='\n')
+
+          Path('.github/subquake-upstream.sha').write_text('${{ steps.upstream.outputs.sha }}\n', encoding='ascii')
+          with open(Path('${GITHUB_OUTPUT}'), 'a', encoding='utf-8') as f:
+              f.write(f'english_changed={str(changed).lower()}\n')
+
+      - name: Commit checked revision
+        if: steps.upstream.outputs.changed == 'true'
         env:
-          UPSTREAM_SHA: ${{ steps.upstream.outputs.sha }}
-          UPSTREAM_SHORT_SHA: ${{ steps.upstream.outputs.short_sha }}
+          SHA: ${{ steps.upstream.outputs.sha }}
+          ENGLISH_CHANGED: ${{ steps.sync.outputs.english_changed }}
+        shell: bash
         run: |
           set -euo pipefail
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add V2.6/Mods/UndeadLegacy/Config/Localization/English.txt
-
-          if git diff --cached --quiet; then
-            echo "Normalized upstream is identical; nothing to commit."
-            exit 0
+          git add .github/subquake-upstream.sha
+          if [ "$ENGLISH_CHANGED" = "true" ]; then
+            git add V2.6/Mods/UndeadLegacy/Config/Localization/English.txt
+            MSG="Update English.txt from Subquake ${SHA:0:12}"
+          else
+            MSG="Track Subquake upstream ${SHA:0:12}"
           fi
-
-          git commit -m "Update English.txt from Subquake ${UPSTREAM_SHORT_SHA}" \
-                     -m "Upstream commit: ${UPSTREAM_SHA}"
+          git commit -m "$MSG" -m "Upstream commit: $SHA"
           git push origin HEAD:main
 
-      - name: Write job summary
+      - name: Summary
         shell: bash
         run: |
-          set -euo pipefail
-          source .upstream/status.txt
           {
             echo "## Subquake upstream localization"
             echo
-            echo "GitLab main commit: \`${gitlab_commit}\`"
-            echo
-            if [ "$changed" = "true" ]; then
-              echo "**Update detected and English.txt was synchronized to main.**"
+            echo "Current GitLab main: \`${{ steps.upstream.outputs.sha }}\`"
+            if [ "${{ steps.upstream.outputs.changed }}" = "false" ]; then
+              echo
+              echo "Commit unchanged — English.txt was not downloaded."
             else
-              echo "**No localization update detected.**"
+              echo
+              echo "New upstream commit checked. English changed: \`${{ steps.sync.outputs.english_changed }}\`."
             fi
-            echo
-            echo "| Check | Repository before sync | Upstream |"
-            echo "|---|---:|---:|"
-            echo "| Lines | $current_lines | $upstream_lines |"
-            echo "| SHA-256 | \`${current_sha256}\` | \`${upstream_sha256}\` |"
-            echo
-            echo "Checked: \`${checked_at}\`"
           } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload comparison artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: subquake-upstream-${{ github.run_number }}
-          path: |
-            .upstream/upstream-English.txt
-            .upstream/upstream.diff
-            .upstream/status.txt
-          if-no-files-found: error
-          retention-days: 30
