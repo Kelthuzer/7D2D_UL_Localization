@@ -54,6 +54,7 @@ jobs:
         id: sync
         shell: python
         run: |
+          import os
           from pathlib import Path
 
           src = Path('/tmp/English.txt').read_bytes()
@@ -74,7 +75,7 @@ jobs:
               dst.write_text('\ufeff' + upstream, encoding='utf-8', newline='\n')
 
           Path('.github/subquake-upstream.sha').write_text('${{ steps.upstream.outputs.sha }}\n', encoding='ascii')
-          with open(Path('${GITHUB_OUTPUT}'), 'a', encoding='utf-8') as f:
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
               f.write(f'english_changed={str(changed).lower()}\n')
 
       - name: Commit checked revision
