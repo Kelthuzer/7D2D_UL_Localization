@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag, e.g. v2.6.0-ru2"
+        description: "Release tag, e.g. v2.6.0-experimental-ru3"
         required: true
         type: string
 
@@ -31,18 +31,21 @@ jobs:
           echo "TAG=${VERSION}" >> "$GITHUB_ENV"
           echo "SAFE_VERSION=${SAFE_VERSION}" >> "$GITHUB_ENV"
           echo "ZIP_NAME=UndeadLegacy_Russian_${SAFE_VERSION}.zip" >> "$GITHUB_ENV"
+          echo "STABLE_ZIP=UndeadLegacy_Russian.zip" >> "$GITHUB_ENV"
 
-      - name: Build release archive
+      - name: Build release archives
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import os
+          import shutil
           from pathlib import Path
           from zipfile import ZipFile, ZIP_DEFLATED
 
           source = Path("V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt")
           archive = Path(os.environ["ZIP_NAME"])
+          stable_archive = Path(os.environ["STABLE_ZIP"])
           archive_path = "Mods/UndeadLegacy/Config/Localization/Russian.txt"
 
           if not source.is_file():
@@ -58,7 +61,12 @@ jobs:
               if zf.read(archive_path) != source.read_bytes():
                   raise SystemExit("Russian.txt inside ZIP differs from repository source")
 
+          shutil.copyfile(archive, stable_archive)
+          if stable_archive.read_bytes() != archive.read_bytes():
+              raise SystemExit("Stable ZIP differs from versioned ZIP")
+
           print(f"Built {archive} ({archive.stat().st_size} bytes)")
+          print(f"Built {stable_archive} ({stable_archive.stat().st_size} bytes)")
           print(f"Archive path: {archive_path}")
           PY
 
@@ -85,12 +93,15 @@ jobs:
         shell: bash
         run: |
           cat > release-notes.md <<'EOF'
-          Русская локализация Undead Legacy v2.6.
+          Русская локализация для текущей экспериментальной версии Undead Legacy v2.6.
 
           **Установка:** распакуйте архив непосредственно в корневую папку `7 Days To Die`.
 
           После распаковки файл должен находиться по пути:
           `7 Days To Die\Mods\UndeadLegacy\Config\Localization\Russian.txt`
+
+          **Постоянная ссылка на последнюю локализацию:**
+          `https://github.com/Kelthuzer/7D2D_UL_Localization/releases/latest/download/UndeadLegacy_Russian.zip`
           EOF
 
       - name: Publish GitHub Release
@@ -99,13 +110,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TITLE="Undead Legacy v2.6 — Russian Localization ${TAG}"
+          TITLE="Undead Legacy v2.6 Experimental — Russian Localization ${TAG}"
 
           if gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release upload "${TAG}" "${ZIP_NAME}" --clobber
+            gh release upload "${TAG}" "${ZIP_NAME}" "${STABLE_ZIP}" --clobber
             gh release edit "${TAG}" --title "${TITLE}" --notes-file release-notes.md --latest
           else
-            gh release create "${TAG}" "${ZIP_NAME}" --title "${TITLE}" --notes-file release-notes.md --latest
+            gh release create "${TAG}" "${ZIP_NAME}" "${STABLE_ZIP}" --title "${TITLE}" --notes-file release-notes.md --latest
           fi
 
       - name: Show result
@@ -114,5 +125,7 @@ jobs:
         shell: bash
         run: |
           echo "Release: $(gh release view "${TAG}" --json url -q .url)"
-          echo "Asset: ${ZIP_NAME}"
+          echo "Versioned asset: ${ZIP_NAME}"
+          echo "Stable asset: ${STABLE_ZIP}"
+          echo "Stable download: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/${STABLE_ZIP}"
           echo "ZIP contains only: Mods/UndeadLegacy/Config/Localization/Russian.txt"
