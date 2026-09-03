@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag, e.g. v2.6.0-experimental-ru3"
+        description: "Undead Legacy Experimental version, e.g. v2.7.23"
         required: true
         type: string
 
@@ -69,7 +69,7 @@ jobs:
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
             EXISTING_SHA="$(git rev-list -n 1 "${TAG}")"
             if [ "${EXISTING_SHA}" != "${GITHUB_SHA}" ]; then
-              echo "Tag ${TAG} already exists on ${EXISTING_SHA}, current commit is ${GITHUB_SHA}. Use a new version tag."
+              echo "Tag ${TAG} already exists on ${EXISTING_SHA}, current commit is ${GITHUB_SHA}. Use the current Undead Legacy version tag."
               exit 1
             fi
           else
@@ -82,16 +82,16 @@ jobs:
       - name: Prepare release notes
         shell: bash
         run: |
-          cat > release-notes.md <<'EOF'
-          Русская локализация для текущей экспериментальной версии Undead Legacy v2.6.
+          cat > release-notes.md <<EOF
+          Русская локализация для экспериментальной версии Undead Legacy ${TAG}.
 
-          **Установка:** распакуйте архив непосредственно в корневую папку `7 Days To Die`.
+          **Установка:** распакуйте архив непосредственно в корневую папку \`7 Days To Die\`.
 
           После распаковки файл должен находиться по пути:
-          `7 Days To Die\\Mods\\UndeadLegacy\\Config\\Localization\\Russian.txt`
+          \`7 Days To Die\\Mods\\UndeadLegacy\\Config\\Localization\\Russian.txt\`
 
           **Постоянная ссылка на последнюю локализацию:**
-          `https://github.com/Kelthuzer/7D2D_UL_Localization/releases/latest/download/UndeadLegacy_Russian.zip`
+          \`https://github.com/Kelthuzer/7D2D_UL_Localization/releases/latest/download/UndeadLegacy_Russian.zip\`
           EOF
 
       - name: Publish GitHub Release
@@ -100,7 +100,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TITLE="Undead Legacy v2.6 Experimental — Russian Localization ${TAG}"
+          TITLE="Undead Legacy ${TAG} — Russian Localization"
 
           if gh release view "${TAG}" >/dev/null 2>&1; then
             gh release upload "${TAG}" "${ZIP_NAME}" --clobber
@@ -115,6 +115,7 @@ jobs:
         shell: bash
         run: |
           echo "Release: $(gh release view "${TAG}" --json url -q .url)"
+          echo "Title: Undead Legacy ${TAG} — Russian Localization"
           echo "Asset: ${ZIP_NAME}"
           echo "Stable download: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/${ZIP_NAME}"
           echo "ZIP contains only: Mods/UndeadLegacy/Config/Localization/Russian.txt"
