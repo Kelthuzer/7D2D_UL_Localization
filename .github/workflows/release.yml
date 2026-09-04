@@ -29,6 +29,7 @@ jobs:
           git check-ref-format "refs/tags/${VERSION}"
           echo "TAG=${VERSION}" >> "$GITHUB_ENV"
           echo "ZIP_NAME=UndeadLegacy_Russian.zip" >> "$GITHUB_ENV"
+          echo "INSTALLER_NAME=Install_Russian_Translation.bat" >> "$GITHUB_ENV"
 
       - name: Build release archive
         shell: bash
@@ -60,6 +61,14 @@ jobs:
           print(f"Archive path: {archive_path}")
           PY
 
+      - name: Validate installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "${INSTALLER_NAME}"
+          grep -Fq "releases/latest/download/UndeadLegacy_Russian.zip" "${INSTALLER_NAME}"
+          echo "Installer: ${INSTALLER_NAME}"
+
       - name: Create tag
         shell: bash
         run: |
@@ -85,13 +94,18 @@ jobs:
           cat > release-notes.md <<EOF
           Русская локализация для экспериментальной версии Undead Legacy ${TAG}.
 
-          **Установка:** распакуйте архив непосредственно в корневую папку \`7 Days To Die\`.
+          **Быстрая установка / обновление:** скачайте \`Install_Russian_Translation.bat\` и запустите его. BAT сам найдёт игру и установит последнюю версию перевода.
+
+          **Ручная установка:** распакуйте \`UndeadLegacy_Russian.zip\` непосредственно в корневую папку \`7 Days To Die\`.
 
           После распаковки файл должен находиться по пути:
           \`7 Days To Die\\Mods\\UndeadLegacy\\Config\\Localization\\Russian.txt\`
 
           **Постоянная ссылка на последнюю локализацию:**
           \`https://github.com/Kelthuzer/7D2D_UL_Localization/releases/latest/download/UndeadLegacy_Russian.zip\`
+
+          **Постоянная ссылка на установщик:**
+          \`https://github.com/Kelthuzer/7D2D_UL_Localization/releases/latest/download/Install_Russian_Translation.bat\`
           EOF
 
       - name: Publish GitHub Release
@@ -103,10 +117,10 @@ jobs:
           TITLE="Undead Legacy ${TAG} — Russian Localization"
 
           if gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release upload "${TAG}" "${ZIP_NAME}" --clobber
+            gh release upload "${TAG}" "${ZIP_NAME}" "${INSTALLER_NAME}" --clobber
             gh release edit "${TAG}" --title "${TITLE}" --notes-file release-notes.md --latest
           else
-            gh release create "${TAG}" "${ZIP_NAME}" --title "${TITLE}" --notes-file release-notes.md --latest
+            gh release create "${TAG}" "${ZIP_NAME}" "${INSTALLER_NAME}" --title "${TITLE}" --notes-file release-notes.md --latest
           fi
 
       - name: Show result
@@ -116,6 +130,8 @@ jobs:
         run: |
           echo "Release: $(gh release view "${TAG}" --json url -q .url)"
           echo "Title: Undead Legacy ${TAG} — Russian Localization"
-          echo "Asset: ${ZIP_NAME}"
-          echo "Stable download: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/${ZIP_NAME}"
+          echo "Archive asset: ${ZIP_NAME}"
+          echo "Installer asset: ${INSTALLER_NAME}"
+          echo "Stable archive: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/${ZIP_NAME}"
+          echo "Stable installer: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/${INSTALLER_NAME}"
           echo "ZIP contains only: Mods/UndeadLegacy/Config/Localization/Russian.txt"
