@@ -1,0 +1,124 @@
+name: Apply current Russian translation fixes
+
+on:
+  push:
+    paths:
+      - .github/workflows/apply-current-translation-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch Russian localization
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess
+
+          en_path = Path('V2.6/Mods/UndeadLegacy/Config/Localization/English.txt')
+          ru_path = Path('V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt')
+
+          EXPECTED_EN_BLOB = 'e9403b38224a4ffdda750d807baec354c248e821'
+          EXPECTED_RU_BLOB = '236fc294466ef60d4367a442495341b92622cd8a'
+
+          def blob_sha(path):
+              return subprocess.check_output(['git', 'hash-object', str(path)], text=True).strip()
+
+          if blob_sha(en_path) != EXPECTED_EN_BLOB:
+              raise SystemExit('English.txt changed since fixes were prepared')
+          if blob_sha(ru_path) != EXPECTED_RU_BLOB:
+              raise SystemExit('Russian.txt changed since fixes were prepared')
+
+          data = ru_path.read_bytes()
+          bom = b'\xef\xbb\xbf' if data.startswith(b'\xef\xbb\xbf') else b''
+          body = data[len(bom):]
+          lines = body.splitlines(keepends=True)
+          nl = b'\r\n' if any(line.endswith(b'\r\n') for line in lines[:20]) else b'\n'
+
+          marker = b'DOWN_VANILA_FIX_REMEBER_COPY,'
+          tail_idx = next((i for i, line in enumerate(lines) if line.startswith(marker)), None)
+          if tail_idx is None:
+              raise SystemExit('Protected override marker not found')
+          protected_tail = b''.join(lines[tail_idx:])
+
+          replacements = {
+              'ulmResourceSkillPointBookFragment': 'Фрагмент знаний',
+          }
+          insert_after = {
+              'ulmBookSkillPointDesc': [
+                  ('ulmBookSkillPointTooltip', 'Вы получили новые знания. Количество ваших очков навыков увеличено на [decea3]1[-].'),
+                  ('ulmBookSkillPointMaxedTooltip', 'Вы больше не можете почерпнуть из этой книги достаточно знаний, чтобы получить очко навыка, но она всё равно принесла вам [decea3]5000[-] опыта.'),
+              ]
+          }
+
+          def key_of(line):
+              raw = line.rstrip(b'\r\n')
+              if not raw or b',' not in raw:
+                  return None
+              return raw.split(b',', 1)[0].decode('utf-8-sig')
+
+          def encode_line(key, value):
+              if '"' in value:
+                  raise SystemExit(f'Unexpected quote in translation: {key}')
+              return f'{key},"{value}"'.encode('utf-8') + nl
+
+          existing_keys = [key_of(line) for line in lines[:tail_idx]]
+          for key in replacements:
+              if existing_keys.count(key) != 1:
+                  raise SystemExit(f'Expected exactly one existing key {key}, found {existing_keys.count(key)}')
+          for anchor, items in insert_after.items():
+              if existing_keys.count(anchor) != 1:
+                  raise SystemExit(f'Expected exactly one anchor {anchor}, found {existing_keys.count(anchor)}')
+              for key, _ in items:
+                  if key in existing_keys:
+                      raise SystemExit(f'Key already exists unexpectedly: {key}')
+
+          out = []
+          for line in lines[:tail_idx]:
+              key = key_of(line)
+              if key in replacements:
+                  out.append(encode_line(key, replacements[key]))
+              else:
+                  out.append(line)
+              if key in insert_after:
+                  for new_key, value in insert_after[key]:
+                      out.append(encode_line(new_key, value))
+
+          new_data = bom + b''.join(out) + protected_tail
+          if not new_data.endswith(protected_tail):
+              raise SystemExit('Protected override tail changed')
+          ru_path.write_bytes(new_data)
+
+          # Validate that main Russian keys follow current English order before the protected tail.
+          def keys_from(path):
+              raw_lines = path.read_bytes().decode('utf-8-sig').splitlines()
+              return [line.split(',', 1)[0] for line in raw_lines if line and ',' in line][1:]
+
+          en_keys = keys_from(en_path)
+          ru_text = ru_path.read_bytes().decode('utf-8-sig').splitlines()
+          ru_main = []
+          for line in ru_text[1:]:
+              if line.startswith('DOWN_VANILA_FIX_REMEBER_COPY,'):
+                  break
+              if line and ',' in line:
+                  ru_main.append(line.split(',', 1)[0])
+          if ru_main != en_keys:
+              raise SystemExit('Russian main key order no longer matches English')
+
+      - name: Commit fixes and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/apply-current-translation-fix.yml
+          git add V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt
+          git commit -m "Translate latest Subquake localization changes"
+          git push origin HEAD:main
