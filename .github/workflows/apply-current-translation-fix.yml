@@ -25,7 +25,7 @@ jobs:
           en_path = Path('V2.6/Mods/UndeadLegacy/Config/Localization/English.txt')
           ru_path = Path('V2.6/Mods/UndeadLegacy/Config/Localization/Russian.txt')
 
-          EXPECTED_EN_BLOB = 'e9403b38224a4ffdda750d807baec354c248e821'
+          EXPECTED_EN_BLOB = '34123e8c024693496643873ff7a0d96216e53f19'
           EXPECTED_RU_BLOB = '236fc294466ef60d4367a442495341b92622cd8a'
 
           def blob_sha(path):
@@ -96,7 +96,6 @@ jobs:
               raise SystemExit('Protected override tail changed')
           ru_path.write_bytes(new_data)
 
-          # Validate that main Russian keys follow current English order before the protected tail.
           def keys_from(path):
               raw_lines = path.read_bytes().decode('utf-8-sig').splitlines()
               return [line.split(',', 1)[0] for line in raw_lines if line and ',' in line][1:]
