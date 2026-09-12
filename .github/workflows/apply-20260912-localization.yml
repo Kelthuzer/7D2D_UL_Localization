@@ -97,7 +97,6 @@ jobs:
               'ulmBuffSheltered': 'В укрытии',
               'ulmBuffShelteredDesc': r'Вы находитесь в укрытии.\n\nСопротивление жаре и холоду [decea3]+10[-]',
 
-              # Shape entries: moved/reworked upstream; keep terminology distinct and consistent.
               'shapeVariantHelper': 'Формы',
               'awningShapes:VariantHelper': 'Формы навесов',
               'corrugatedMetalShapes:VariantHelper': 'Формы из гофрированного металла',
@@ -121,8 +120,6 @@ jobs:
               'challengeGathererStoneDesc': 'Камень — базовый ресурс, используемый в строительстве и изготовлении предметов. [decea3]Крупный камень[-] можно добывать [decea3]киркой[-], [decea3]отбойным молотком[-] или [decea3]буром Валькирии[-] из таких источников, как [decea3]каменные валуны[-] или выходящие на поверхность залежи [decea3]камня[-].',
           }
 
-          # Validate that numbers, placeholders, markup tags and explicit line breaks
-          # in every translated new/changed entry still match English.
           tag_re = re.compile(r'\[[^\]]+\]')
           placeholder_re = re.compile(r'\{[^{}]+\}')
           number_re = re.compile(r'(?<![\w])[-+]?\d+(?:\.\d+)?%?')
@@ -140,14 +137,12 @@ jobs:
               return tags, placeholders, numbers, v.count(r'\n')
 
           for key in overrides:
-              if key not in new_map:
-                  raise SystemExit(f'Override key missing from current English: {key}')
-              if len(new_map[key]) != 1:
-                  raise SystemExit(f'Expected one English value for translated key {key}')
-              if signature(new_map[key][0]) != signature(f'"{overrides[key]}"'):
-                  raise SystemExit(
-                      f'Token mismatch for {key}: EN={signature(new_map[key][0])}, RU={signature(overrides[key])}'
-                  )
+              if key not in new_map or len(new_map[key]) != 1:
+                  raise SystemExit(f'Expected exactly one current English value for translated key {key}')
+              en_sig = signature(new_map[key][0])
+              ru_sig = signature(f'"{overrides[key]}"')
+              if en_sig != ru_sig:
+                  raise SystemExit(f'Token mismatch for {key}: EN={en_sig}, RU={ru_sig}')
 
           ru_data = ru_path.read_bytes()
           bom = b'\xef\xbb\xbf' if ru_data.startswith(b'\xef\xbb\xbf') else b''
@@ -165,13 +160,6 @@ jobs:
               raw = line.rstrip(b'\r\n')
               if not raw or b',' not in raw:
                   return None
-              return raw.split(b', 1)[0].decode('utf-8-sig')
-
-          # The previous helper has a typo-safe replacement below; keep all parsing split-on-first-comma.
-          def key_of(line):
-              raw = line.rstrip(b'\r\n')
-              if not raw or b',' not in raw:
-                  return None
               return raw.split(b',', 1)[0].decode('utf-8-sig')
 
           prefix = []
@@ -183,7 +171,6 @@ jobs:
                   prefix.append(line)
                   continue
               if key is None:
-                  # There should be no free-standing lines inside the data body.
                   raise SystemExit('Unexpected non-record line in Russian main localization body')
               seen_first_data = True
               queues[key].append(line)
@@ -196,6 +183,8 @@ jobs:
           out = list(prefix)
           for key, _value in new_records:
               if key in overrides:
+                  if queues[key]:
+                      queues[key].popleft()
                   out.append(encode_line(key, overrides[key]))
               else:
                   if not queues[key]:
@@ -213,20 +202,19 @@ jobs:
               raise SystemExit('Protected override tail changed')
           ru_path.write_bytes(new_ru)
 
-          # Final key-order validation, including duplicates.
-          ru_main_records = []
+          ru_main_keys = []
           for line in ru_path.read_bytes().decode('utf-8-sig').splitlines()[1:]:
               if line.startswith('DOWN_VANILA_FIX_REMEBER_COPY,'):
                   break
               if line and ',' in line:
-                  ru_main_records.append(line.split(',', 1)[0])
+                  ru_main_keys.append(line.split(',', 1)[0])
           en_key_sequence = [k for k, _ in new_records]
-          if ru_main_records != en_key_sequence:
+          if ru_main_keys != en_key_sequence:
               raise SystemExit('Russian main key sequence does not exactly match current English')
 
           print(f'English semantic diff since {BASE[:12]}: +{len(added)} / -{len(removed)} / changed values {len(changed)}')
           print('Changed existing English keys:', ', '.join(sorted(changed)))
-          print('Token audit passed for translated entries (numbers/placeholders/tags/\\n).')
+          print('Token audit passed: numbers, percentages, placeholders, markup tags and \\n are preserved.')
 
       - name: Commit translation and remove one-shot workflow
         shell: bash
