@@ -96,7 +96,6 @@ jobs:
               'uiResearchMissing': 'Вы не исследовали [73E9B2]{0}[-]',
               'ulmBuffSheltered': 'В укрытии',
               'ulmBuffShelteredDesc': r'Вы находитесь в укрытии.\n\nСопротивление жаре и холоду [decea3]+10[-]',
-
               'shapeVariantHelper': 'Формы',
               'awningShapes:VariantHelper': 'Формы навесов',
               'corrugatedMetalShapes:VariantHelper': 'Формы из гофрированного металла',
@@ -108,7 +107,6 @@ jobs:
               'concreteShapes:VariantHelper': 'Бетонные формы',
               'rConcreteShapes:VariantHelper': 'Железобетонные формы',
               'steelShapes:VariantHelper': 'Стальные формы',
-
               'challengeGathererIron': 'Добудьте [decea3]железную руду[-]',
               'challengeGathererIronShort': 'Добудьте немного [decea3]железной руды[-]',
               'challengeGathererIronDesc': 'Железо — плотный и прочный материал, используемый для изготовления предметов в [decea3]кузнице[-], но сначала руду нужно переработать в [decea3]горне[-], чтобы выплавить [decea3]слитки[-]. Его можно добывать [decea3]киркой[-], [decea3]отбойным молотком[-] или [decea3]буром Валькирии[-] из таких источников, как [decea3]железные рудные валуны[-] или выходящие на поверхность жилы [decea3]железной руды[-].',
@@ -149,7 +147,6 @@ jobs:
           body = ru_data[len(bom):]
           lines = body.splitlines(keepends=True)
           nl = b'\r\n' if any(line.endswith(b'\r\n') for line in lines[:20]) else b'\n'
-
           marker = b'DOWN_VANILA_FIX_REMEBER_COPY,'
           tail_idx = next((i for i, line in enumerate(lines) if line.startswith(marker)), None)
           if tail_idx is None:
@@ -171,7 +168,9 @@ jobs:
                   prefix.append(line)
                   continue
               if key is None:
-                  raise SystemExit('Unexpected non-record line in Russian main localization body')
+                  if not line.strip():
+                      continue
+                  raise SystemExit(f'Unexpected non-record line in Russian main localization body: {line!r}')
               seen_first_data = True
               queues[key].append(line)
 
