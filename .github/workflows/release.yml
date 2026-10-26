@@ -122,6 +122,26 @@ jobs:
           else
             gh release create "${TAG}" "${ZIP_NAME}" "${INSTALLER_NAME}" --title "${TITLE}" --notes-file release-notes.md --latest
           fi
+      
+      - name: Prepare Nexus Mods version
+        shell: bash
+        run: |
+          VERSION="${TAG#v}"
+          VERSION="${VERSION//_/-}"
+          echo "NEXUS_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Publish to Nexus Mods
+        uses: Nexus-Mods/upload-action@v1.0.0-beta.9
+        with:
+          api_key: ${{ secrets.NEXUSMODS_API_KEY }}
+          file_id: ${{ vars.NEXUSMODS_FILE_ID }}
+          filename: UndeadLegacy_Russian.zip
+          version: ${{ env.NEXUS_VERSION }}
+          display_name: Undead Legacy - Russian Localization
+          description: Official Russian localization for Undead Legacy
+          category: main
+          update_mod_version: true
+          archive_existing_version: false
 
       - name: Show result
         env:
